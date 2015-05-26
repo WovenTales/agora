@@ -1,18 +1,19 @@
-#ifndef ENTRY_H
-#define ENTRY_H
+#ifndef ARTICLE_H
+#define ARTICLE_H
 
 #include <iostream>
 #include <pugixml.hpp>
 #include <string>
+#include <string.h>
 #include <time.h>
 
-#include "feed.hxx"
+#include "database.hxx"
 
 using namespace std;
 
-class Entry {
+class Article {
   private:
-	Entry();
+	Article();
 
 	string id;
 	string title;
@@ -30,13 +31,13 @@ class Entry {
 	//TODO: Category tags
 	//TODO: Manage <source>
 	
-	void parseAtom(pugi::xml_node&);
-	void parseRss(pugi::xml_node&);
+	void parseAtom(const pugi::xml_node&);
+	void parseRss(const pugi::xml_node&);
 	
   public:
-	Entry(pugi::xml_node&, FeedLang);
+	Article(const pugi::xml_node&, const FeedLang);
 
-	void print();
+	const void print();
 };
 
 #endif

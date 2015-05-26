@@ -3,24 +3,19 @@
 
 #include <iostream>
 #include <pugixml.hpp>
-#include <sqlite3.h>
 #include <string>
-#include <string.h>
 #include <time.h>
 
-enum FeedLang {
-	RSS,
-	ATOM
-};
-
-// Requires definition of FeedLang
-#include "entry.hxx"
+#include "article.hxx"
+#include "database.hxx"
 
 using namespace std;
 
 class Feed {
   private:
 	Feed();
+
+	pugi::xml_node root;
 
 	string id;
 	string title;
@@ -38,17 +33,16 @@ class Feed {
 	//TODO: Category tags (default/additional for entries)
 	//TODO: Language
 
-	void initialize(pugi::xml_document&);
-	void parseAtom(pugi::xml_node&);
-	void parseRss(pugi::xml_node&);
+	void initialize(const pugi::xml_document&);
+	void parseAtom(const pugi::xml_node&);
+	void parseRss(const pugi::xml_node&);
 
   public:
-	Feed(char *filename);
+	Feed(const char *filename);
 
-	//TODO: see http://atomenabled.org/developers/syndication/#text
-	static const char *parseAtomTitle(const pugi::xml_node &t) { return t.child_value(); };
+	const void save(Database&);
 
-	void print();
+	const void print();
 };
 
 #endif

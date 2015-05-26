@@ -1,8 +1,8 @@
-#include "entry.hxx"
+#include "article.hxx"
 
 using namespace pugi;
 
-Entry::Entry(xml_node &entry, FeedLang lang) {
+Article::Article(const xml_node &entry, const FeedLang lang) {
 	if (lang == ATOM) {
 		parseAtom(entry);
 	} else if (lang == RSS) {
@@ -12,9 +12,9 @@ Entry::Entry(xml_node &entry, FeedLang lang) {
 	}
 }
 
-void Entry::parseAtom(xml_node &entry) {
+void Article::parseAtom(const xml_node &entry) {
 	id = entry.child_value("id");
-	title = Feed::parseAtomTitle(entry.child("title"));
+	title = Database::parseAtomTitle(entry.child("title"));
 
 	// pugixml gives empty string if node doesn't exist
 	author = entry.child("author").child_value("name");
@@ -27,7 +27,7 @@ void Entry::parseAtom(xml_node &entry) {
 	}
 }
 
-void Entry::parseRss(xml_node &entry) {
+void Article::parseRss(const xml_node &entry) {
 	id = entry.child_value("guid");
 	link = entry.child_value("link");
 	summary = entry.child_value("description");
@@ -41,7 +41,7 @@ void Entry::parseRss(xml_node &entry) {
 	}
 }
 
-void Entry::print() {
+const void Article::print() {
 	cout << title << " (#" << id << ")" << endl;
 	cout << author << " @ " << link << endl;
 	cout << summary << endl;

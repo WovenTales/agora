@@ -1,19 +1,33 @@
 INCLUDE = -lpugixml -lsqlite3
 FLAGS = -c $(INCLUDE)
 
-TARGETS = feed.o entry.o
+FILES = agora feed article database
 
+SRCDIR = src
+OBJDIR = obj
+BINDIR = bin
 
-agora: $(TARGETS)
-	g++ -o agora $(TARGETS) $(INCLUDE)
+OBJECTS = $(FILES:%=$(OBJDIR)/%.o)
 
-debug: FLAGS += -g -DDEBUG_TEST_FEED
+$(BINDIR)/agora: $(OBJDIR) $(BINDIR) $(OBJECTS)
+	g++ -o $(BINDIR)/agora $(OBJECTS) $(INCLUDE)
+
+debug: FLAGS += -g -DDEBUG
 debug: feedarium
 
 .PHONY: clean
 clean:
-	-rm -f *.o agora
+	rm -f $(OBJECTS) $(BINDIR)/agora
+	-rmdir $(BINDIR) $(OBJDIR)
 
-entry.o: feed.hxx
-%.o: %.cxx %.hxx
-	g++ $(FLAGS) $<
+$(OBJDIR):
+	mkdir -p $(OBJDIR)
+$(BINDIR):
+	mkdir -p $(BINDIR)
+
+$(OBJDIR)/agora.o: $(SRCDIR)/feed.hxx
+$(OBJDIR)/article.o: $(SRCDIR)/database.hxx
+#database.o: 
+$(OBJDIR)/feed.o: $(SRCDIR)/article.hxx
+$(OBJDIR)/%.o: $(SRCDIR)/%.cxx $(SRCDIR)/%.hxx
+	g++ $(FLAGS) -o $(<:$(SRCDIR)%.cxx=$(OBJDIR)%.o) $<
