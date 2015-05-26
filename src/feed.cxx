@@ -51,14 +51,21 @@ void Feed::parseRss(const xml_node &feed) {
 }
 
 const void Feed::save(Database &db) {
-	//TODO: Only works if passed uninitialized database
-	const char *tag = (lang == ATOM ? "entry" : "item");
+	ostringstream cmd("INSERT INTO feeds (fID, fTitle, fLink, fAuthor, fDesc) VALUES (");
+	cmd	<< "'" << id << "',"
+		<< "'" << title << "',"
+		<< "'" << link << "',"
+		<< "'" << author << "',"
+		<< "'" << description << "');";
+	db.exec(cmd.str());
+	print();
 
+	const char *tag = (lang == ATOM ? "entry" : "item");
 	for (xml_node entry = root.child(tag);
 	     entry.type(); // != NULL
 	     entry = entry.next_sibling(tag)) {
-		Article a(entry, lang);
-		a.print();
+		Article a(entry, id, lang);
+		a.save(db);
 	}
 }
 

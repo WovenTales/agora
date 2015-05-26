@@ -2,7 +2,9 @@
 
 using namespace pugi;
 
-Article::Article(const xml_node &entry, const FeedLang lang) {
+Article::Article(const xml_node &entry, string fID, const FeedLang lang) {
+	feedID = fID;
+
 	if (lang == ATOM) {
 		parseAtom(entry);
 	} else if (lang == RSS) {
@@ -39,6 +41,19 @@ void Article::parseRss(const xml_node &entry) {
 	if (!link.compare("") && (strcmp(entry.child("guid").attribute("isPermaLink").value(), "false") != 0) && (!id.compare(0, 7, "http://") || !id.compare(0, 8, "https://"))) {
 		link = id;
 	}
+}
+
+const void Article::save(Database &db) {
+	ostringstream cmd("INSERT INTO articles (aID, fID, aTitle, aLink, aAuthor, aSummary, aContent) VALUES (");
+	cmd	<< "'" << id << "',"
+		<< "'" << feedID << "',"
+		<< "'" << title << "',"
+		<< "'" << link << "',"
+		<< "'" << author << "',"
+		<< "'" << summary << "',"
+		<< "'" << content << "');";
+	db.exec(cmd.str());
+	print();
 }
 
 const void Article::print() {

@@ -3,7 +3,9 @@
 
 #include <iostream>
 #include <pugixml.hpp>
+#include <sstream>
 #include <string>
+#include <string.h>
 #include <time.h>
 
 #include "article.hxx"
