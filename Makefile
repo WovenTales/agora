@@ -25,9 +25,9 @@ $(OBJDIR):
 $(BINDIR):
 	mkdir -p $(BINDIR)
 
-$(OBJDIR)/agora.o: $(SRCDIR)/feed.hxx
-$(OBJDIR)/article.o: $(SRCDIR)/database.hxx
+$(OBJDIR)/agora.o: $(addprefix $(SRCDIR)/,feed.hxx)
+$(OBJDIR)/article.o: $(addprefix $(SRCDIR)/,agora.hxx database.hxx)
 #database.o: 
-$(OBJDIR)/feed.o: $(SRCDIR)/article.hxx
-$(OBJDIR)/%.o: $(SRCDIR)/%.cxx $(SRCDIR)/%.hxx
+$(OBJDIR)/feed.o: $(addprefix $(SRCDIR)/,article.hxx)
+$(OBJDIR)/%.o: $(addprefix $(SRCDIR)/,%.cxx %.hxx)
 	g++ $(FLAGS) -o $(<:$(SRCDIR)%.cxx=$(OBJDIR)%.o) $<

@@ -48,25 +48,52 @@ void Feed::parseRss(const xml_node &feed) {
 	description = feed.child_value("description");
 	id = link = feed.child_value("link");
 	title = feed.child_value("title");
+
+	if (id.compare("")) {  // id != ""
+		//TODO: Generate unique id
+	}
 }
 
 const void Feed::save(Database &db) {
-	ostringstream cmd("INSERT INTO feeds (fID, fTitle, fLink, fAuthor, fDesc) VALUES (");
-	cmd	<< "'" << id << "',"
-		<< "'" << title << "',"
-		<< "'" << link << "',"
-		<< "'" << author << "',"
-		<< "'" << description << "');";
-	db.exec(cmd.str());
-	print();
+	ostringstream cmd("");
+	ostringstream cols("");
+	ostringstream vals("");
+
+	cols << "fID";
+	vals << "'" << replaceAll(id, "'", "''") << "'";
+	if (title.compare("")) {  // title != ""
+		cols << ", fTitle";
+		vals << ",'" << replaceAll(title, "'", "''") << "'";
+	}
+	if (link.compare("")) {  // link != ""
+		cols << ", fLink";
+		vals << ",'" << replaceAll(link, "'", "''") << "'";
+	}
+	if (author.compare("")) {  // author != ""
+		cols << ", fAuthor";
+		vals << ",'" << replaceAll(author, "'", "''") << "'";
+	}
+	if (description.compare("")) {  // description != ""
+		cols << ", fDesc";
+		vals << ",'" << replaceAll(description, "'", "''") << "'";
+	}
+
+	cmd << "INSERT INTO feeds (" << cols.str() << ") VALUES (" << vals.str() << ");";
+	//db.exec(cmd.str());
+	cout << cmd.str() << endl;
 
 	const char *tag = (lang == ATOM ? "entry" : "item");
+	int count = 0;
+	//TODO: For some reason, doesn't run through all valid children
+	//  Appears to be due to overly high load (whatif gives 5 articles if content commented out in save(), 1 otherwise)
 	for (xml_node entry = root.child(tag);
 	     entry.type(); // != NULL
 	     entry = entry.next_sibling(tag)) {
 		Article a(entry, id, lang);
 		a.save(db);
+		count++;
 	}
+	cout << count << " articles" << endl;
 }
 
 const void Feed::print() {

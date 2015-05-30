@@ -1,15 +1,15 @@
 #ifndef FEED_H
 #define FEED_H
 
+#include "article.hxx"
+#include "database.hxx"
+
 #include <iostream>
 #include <pugixml.hpp>
 #include <sstream>
 #include <string>
 #include <string.h>
 #include <time.h>
-
-#include "article.hxx"
-#include "database.hxx"
 
 using namespace std;
 

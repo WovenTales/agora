@@ -1,14 +1,15 @@
 #ifndef ARTICLE_H
 #define ARTICLE_H
 
+#include "agora.hxx"
+#include "database.hxx"
+
 #include <iostream>
 #include <pugixml.hpp>
 #include <sstream>
 #include <string>
 #include <string.h>
 #include <time.h>
-
-#include "database.hxx"
 
 using namespace std;
 
