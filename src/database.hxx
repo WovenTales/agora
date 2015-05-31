@@ -1,17 +1,13 @@
 #ifndef DATABASE_H
 #define DATABASE_H
 
-#include <iostream>
+class Article;
+
 #include <pugixml.hpp>
 #include <sqlite3.h>
 #include <string>
 
 using namespace std;
-
-enum FeedLang {
-	RSS,
-	ATOM
-};
 
 class Database {
   private:
@@ -25,13 +21,16 @@ class Database {
 	Database(const char *filename);
 	virtual ~Database();
 
-	void exec(string s) { sqlite3_exec(db, s.c_str(), dummy, NULL, NULL); };
+	void exec(std::string s) { sqlite3_exec(db, s.c_str(), NULL, NULL, NULL); };
 
-	static int dummy(void *out, int cols, char *data[], char *colNames[]) { return 0; }
+	Article getArticle(std::string);
 
-	// Putting here so we don't have circular dependancy (Feed <-> Article)
+	static int makeArticle(Article*, int, char**, char**);
+
 	//TODO: see http://atomenabled.org/developers/syndication/#text
 	static const char *parseAtomTitle(const pugi::xml_node &t) { return t.child_value(); };
+	static time_t parseTime(const char*);
+	static time_t parseTime(std::string);
 };
 
 #endif

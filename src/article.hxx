@@ -1,22 +1,17 @@
 #ifndef ARTICLE_H
 #define ARTICLE_H
 
-#include "agora.hxx"
-#include "database.hxx"
+#include <agora.hxx>
+class Database;
 
-#include <iostream>
 #include <pugixml.hpp>
-#include <sstream>
 #include <string>
-#include <string.h>
 #include <time.h>
 
 using namespace std;
 
 class Article {
   private:
-	Article();
-
 	string id;
 	string feedID;
 	string title;
@@ -27,8 +22,6 @@ class Article {
 	//TODO: see http://atomenabled.org/developers/syndication/#contentElement
 	string content;
 	string link;
-	//TODO: Include in parsing functions (would require recognizing format of string)
-	time_t published;
 	string summary;
 
 	//TODO: Category tags
@@ -38,7 +31,20 @@ class Article {
 	void parseRss(const pugi::xml_node&);
 	
   public:
+	Article();
 	Article(const pugi::xml_node&, string fID, const FeedLang);
+	Article(string id, string feedID, string title, time_t updated, string author ="", string content ="", string link ="", string summary ="");
+	
+	string getTitle() { return title; };
+
+	void setAuthor(string s) { author = s; };
+	void setContent(string s) { content = s; };
+	void setFID(string s) { feedID = s; };
+	void setID(string s) { id = s; };
+	void setLink(string s) { link = s; };
+	void setSummary(string s) { summary = s; };
+	void setTitle(string s) { title = s; };
+	void setUpdate(time_t t) { updated = t; };
 
 	const void save(Database&);
 

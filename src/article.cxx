@@ -1,7 +1,22 @@
-#include "article.hxx"
+#include <article.hxx>
+
+#include <database.hxx>
+
+#include <iostream>
+#include <string.h>
 
 using namespace pugi;
 
+Article::Article() {
+	id = "";
+	feedID = "";
+	title = "";
+	updated = Database::parseTime("");
+	author = "";
+	content = "";
+	link = "";
+	summary = "";
+}
 Article::Article(const xml_node &entry, string fID, const FeedLang lang) {
 	feedID = fID;
 
@@ -12,6 +27,16 @@ Article::Article(const xml_node &entry, string fID, const FeedLang lang) {
 	} else {
 		cerr << "Invalid language for parsing" << endl;
 	}
+}
+Article::Article(string i, string f, string t, time_t u, string a, string c, string l, string s) {
+	id = i;
+	feedID = f;
+	title = t;
+	updated = u;
+	author = a;
+	content = c;
+	link = l;
+	summary = s;
 }
 
 void Article::parseAtom(const xml_node &entry) {
@@ -48,41 +73,44 @@ void Article::parseRss(const xml_node &entry) {
 }
 
 const void Article::save(Database &db) {
-	ostringstream cmd("");
-	ostringstream cols("");
-	ostringstream vals("");
+	string insert("INSERT INTO articles (");
+	string update;
+	string cols("aID, fID");
+	string vals("'" + replaceAll(id, "'", "''") + "','" + replaceAll(feedID, "'", "''") + "'");
 
-	cols << "aID, fID";
-	vals << "'" << replaceAll(id, "'", "''") << "','" << replaceAll(feedID, "'", "''") << "'";
 	if (title.compare("")) {  // title != ""
-		cols << ", aTitle";
-		vals << ",'" << replaceAll(title, "'", "''") << "'";
+		cols += ", aTitle";
+		vals += ",'" + replaceAll(title, "'", "''") + "'";
 	}
 	if (link.compare("")) {  // link != ""
-		cols << ", aLink";
-		vals << ",'" << replaceAll(link, "'", "''") << "'";
+		cols += ", aLink";
+		vals += ",'" + replaceAll(link, "'", "''") + "'";
 	}
 	if (author.compare("")) {  // author != ""
-		cols << ", aAuthor";
-		vals << ",'" << replaceAll(author, "'", "''") << "'";
+		cols += ", aAuthor";
+		vals += ",'" + replaceAll(author, "'", "''") + "'";
 	}
 	if (summary.compare("")) {  // summary != ""
-		cols << ", aSummary";
-		vals << ",'" << replaceAll(summary, "'", "''") << "'";
+		cols += ", aSummary";
+		vals += ",'" + replaceAll(summary, "'", "''") + "'";
 	}
 	if (content.compare("")) {  // content != ""
-		cols << ", aContent";
-		vals << ",'" << replaceAll(content, "'", "''") << "'";
+		//TODO: Inserting content into non-cout stream skips articles in for loop (in Feed::save)
+		//cols += ", aContent";
+		//vals += ",'" + replaceAll(content, "'", "''") + "'";
+		//update = "UPDATE articles SET aContent = '" + content + "' WHERE aID = '" + replaceAll(id, "'", "''") + "'";
 	}
 
-	cmd << "INSERT INTO articles (" << cols.str() << ") VALUES (" << vals.str() << ");";
-	//db.exec(cmd.str());
-	cout << cmd.str() << endl;
+	//TODO: Only update what's necessary
+	insert += cols + ") VALUES (" + vals + ");";
+	cout << insert << endl;
+	//cout << update << endl;
+	db.exec(insert);
 }
 
 const void Article::print() {
 	cout << title << " (#" << id << ")" << endl;
 	cout << author << " @ " << link << endl;
 	cout << summary << endl;
-	//cout << content << endl;
+	cout << content << endl;
 }

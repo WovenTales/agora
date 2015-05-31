@@ -1,10 +1,17 @@
-#include "agora.hxx"
+#include <agora.hxx>
+
+#include <article.hxx>
+#include <database.hxx>
+#include <feed.hxx>
 
 int main(int argc, char *argv[]) {
 	Database db(argv[2]);
 	Feed f(argv[1]);
 	//TODO: Does not appear to correctly insert entries
 	f.save(db);
+
+	Article a = db.getArticle("http://what-if.xkcd.com/135/");
+	a.print();
 }
 
 

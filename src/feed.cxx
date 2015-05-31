@@ -1,4 +1,10 @@
-#include "feed.hxx"
+#include <feed.hxx>
+
+#include <article.hxx>
+#include <database.hxx>
+
+#include <iostream>
+#include <string.h>
 
 using namespace std;
 using namespace pugi;
@@ -55,37 +61,36 @@ void Feed::parseRss(const xml_node &feed) {
 }
 
 const void Feed::save(Database &db) {
-	ostringstream cmd("");
-	ostringstream cols("");
-	ostringstream vals("");
+	string cmd("INSERT INTO feeds (");
+	string cols("fID");
+	string vals("'" + replaceAll(id, "'", "''") + "'");
 
-	cols << "fID";
-	vals << "'" << replaceAll(id, "'", "''") << "'";
 	if (title.compare("")) {  // title != ""
-		cols << ", fTitle";
-		vals << ",'" << replaceAll(title, "'", "''") << "'";
+		cols += ", fTitle";
+		vals += ",'" + replaceAll(title, "'", "''") + "'";
 	}
 	if (link.compare("")) {  // link != ""
-		cols << ", fLink";
-		vals << ",'" << replaceAll(link, "'", "''") << "'";
+		cols += ", fLink";
+		vals += ",'" + replaceAll(link, "'", "''") + "'";
 	}
 	if (author.compare("")) {  // author != ""
-		cols << ", fAuthor";
-		vals << ",'" << replaceAll(author, "'", "''") << "'";
+		cols += ", fAuthor";
+		vals += ",'" + replaceAll(author, "'", "''") + "'";
 	}
 	if (description.compare("")) {  // description != ""
-		cols << ", fDesc";
-		vals << ",'" << replaceAll(description, "'", "''") << "'";
+		cols += ", fDesc";
+		vals += ",'" + replaceAll(description, "'", "''") + "'";
 	}
 
-	cmd << "INSERT INTO feeds (" << cols.str() << ") VALUES (" << vals.str() << ");";
-	//db.exec(cmd.str());
-	cout << cmd.str() << endl;
+	//TODO: Only update what's necessary
+	cmd += cols + ") VALUES (" + vals + ");";
+	db.exec(cmd);
+	cout << cmd << endl;
 
+	//TODO: Skips top feed if database already exists
+	//  Continue to have problems wth that in general
 	const char *tag = (lang == ATOM ? "entry" : "item");
-	int count = 0;
-	//TODO: For some reason, doesn't run through all valid children
-	//  Appears to be due to overly high load (whatif gives 5 articles if content commented out in save(), 1 otherwise)
+	unsigned int count = 0;
 	for (xml_node entry = root.child(tag);
 	     entry.type(); // != NULL
 	     entry = entry.next_sibling(tag)) {

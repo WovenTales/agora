@@ -1,12 +1,13 @@
 #ifndef AGORA_H
 #define AGORA_H
 
-#include "database.hxx"
-#include "feed.hxx"
-
-#include <iostream>
 #include <string>
 
-std::string replaceAll(string, const string&, const string&);
+enum FeedLang {
+	RSS,
+	ATOM
+};
+
+std::string replaceAll(std::string, const std::string&, const std::string&);
 
 #endif
