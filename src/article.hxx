@@ -2,7 +2,6 @@
 #define ARTICLE_H
 
 #include <agora.hxx>
-class Database;
 
 #include <pugixml.hpp>
 #include <string>
@@ -35,7 +34,14 @@ class Article {
 	Article(const pugi::xml_node&, string fID, const FeedLang);
 	Article(string id, string feedID, string title, time_t updated, string author ="", string content ="", string link ="", string summary ="");
 	
+	string getAuthor() { return author; };
+	string getContent() { return content; };
+	string getFID() { return feedID; };
+	string getID() { return id; };
+	string getLink() { return link; };
+	string getSummary() { return summary; };
 	string getTitle() { return title; };
+	time_t getUpdateTime() { return updated; };
 
 	void setAuthor(string s) { author = s; };
 	void setContent(string s) { content = s; };
@@ -44,11 +50,9 @@ class Article {
 	void setLink(string s) { link = s; };
 	void setSummary(string s) { summary = s; };
 	void setTitle(string s) { title = s; };
-	void setUpdate(time_t t) { updated = t; };
+	void setUpdateTime(time_t t) { updated = t; };
 
-	const void save(Database&);
-
-	const void print();
+	void print() const;
 };
 
 #endif

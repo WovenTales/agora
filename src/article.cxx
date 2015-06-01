@@ -1,8 +1,7 @@
 #include <article.hxx>
 
-#include <database.hxx>
-
 #include <iostream>
+#include <sstream>
 #include <string.h>
 
 using namespace pugi;
@@ -11,7 +10,7 @@ Article::Article() {
 	id = "";
 	feedID = "";
 	title = "";
-	updated = Database::parseTime("");
+	updated = parseTime("");
 	author = "";
 	content = "";
 	link = "";
@@ -41,7 +40,7 @@ Article::Article(string i, string f, string t, time_t u, string a, string c, str
 
 void Article::parseAtom(const xml_node &entry) {
 	id = entry.child_value("id");
-	title = Database::parseAtomTitle(entry.child("title"));
+	title = parseAtomTitle(entry.child("title"));
 
 	// pugixml gives empty string if node doesn't exist
 	author = entry.child("author").child_value("name");
@@ -72,43 +71,7 @@ void Article::parseRss(const xml_node &entry) {
 	}
 }
 
-const void Article::save(Database &db) {
-	string insert("INSERT INTO articles (");
-	string update;
-	string cols("aID, fID");
-	string vals("'" + replaceAll(id, "'", "''") + "','" + replaceAll(feedID, "'", "''") + "'");
-
-	if (title.compare("")) {  // title != ""
-		cols += ", aTitle";
-		vals += ",'" + replaceAll(title, "'", "''") + "'";
-	}
-	if (link.compare("")) {  // link != ""
-		cols += ", aLink";
-		vals += ",'" + replaceAll(link, "'", "''") + "'";
-	}
-	if (author.compare("")) {  // author != ""
-		cols += ", aAuthor";
-		vals += ",'" + replaceAll(author, "'", "''") + "'";
-	}
-	if (summary.compare("")) {  // summary != ""
-		cols += ", aSummary";
-		vals += ",'" + replaceAll(summary, "'", "''") + "'";
-	}
-	if (content.compare("")) {  // content != ""
-		//TODO: Inserting content into non-cout stream skips articles in for loop (in Feed::save)
-		//cols += ", aContent";
-		//vals += ",'" + replaceAll(content, "'", "''") + "'";
-		//update = "UPDATE articles SET aContent = '" + content + "' WHERE aID = '" + replaceAll(id, "'", "''") + "'";
-	}
-
-	//TODO: Only update what's necessary
-	insert += cols + ") VALUES (" + vals + ");";
-	cout << insert << endl;
-	//cout << update << endl;
-	db.exec(insert);
-}
-
-const void Article::print() {
+void Article::print() const {
 	cout << title << " (#" << id << ")" << endl;
 	cout << author << " @ " << link << endl;
 	cout << summary << endl;

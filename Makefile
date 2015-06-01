@@ -33,9 +33,9 @@ $(BINDIR):
 	mkdir -p $(BINDIR)
 
 $(OBJDIR)/agora.o: $(addprefix $(INCDIR)/,database.hxx feed.hxx)
-$(OBJDIR)/article.o: $(addprefix $(INCDIR)/,agora.hxx database.hxx)
-#$(OBJDIR)/database.o: $(addprefix $(INCDIR)/,article.hxx)
-$(OBJDIR)/feed.o: $(addprefix $(INCDIR)/,agora.hxx article.hxx database.hxx)
+$(OBJDIR)/article.o: $(addprefix $(INCDIR)/,agora.hxx)
+$(OBJDIR)/database.o: $(addprefix $(INCDIR)/,agora.hxx article.hxx feed.hxx)
+$(OBJDIR)/feed.o: $(addprefix $(INCDIR)/,agora.hxx article.hxx)
 
 $(OBJDIR)/%.o: $(SRCDIR)/%.cxx $(INCDIR)/%.hxx
 	g++ $(FLAGS) -o $(<:$(SRCDIR)%.cxx=$(OBJDIR)%.o) $<

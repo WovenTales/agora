@@ -2,7 +2,6 @@
 #define FEED_H
 
 #include <agora.hxx>
-class Database;
 
 #include <pugixml.hpp>
 #include <string>
@@ -39,9 +38,16 @@ class Feed {
   public:
 	Feed(const char *filename);
 
-	const void save(Database&);
+	std::string getAuthor() const { return author; };
+	std::string getDescription() const { return description; };
+	std::string getID() const { return id; };
+	FeedLang getLang() const { return lang; };
+	std::string getLink() const { return link; };
+	pugi::xml_node getRoot() const { return root; };
+	std::string getTitle() const { return title; };
+	time_t getUpdateTime() const { return updated; };
 
-	const void print();
+	void print() const;
 };
 
 #endif
