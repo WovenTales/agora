@@ -8,8 +8,6 @@ class Feed;
 #include <queue>
 #include <string>
 
-using namespace std;
-
 class Database {
   private:
 	Database();
@@ -31,7 +29,7 @@ class Database {
 	Article getArticle(const std::string&);
 
 	void stage(const Feed &f);
-	void stage(Article *a) { articleStage.push(a); };
+	void stage(Article *a);
 
 	void save();
 };

@@ -1,5 +1,7 @@
 #include <article.hxx>
 
+#include <logger.hxx>
+
 #include <iostream>
 #include <sstream>
 #include <string.h>
@@ -39,6 +41,8 @@ Article::Article(string i, string f, string t, time_t u, string a, string c, str
 }
 
 void Article::parseAtom(const xml_node &entry) {
+	Logger::log("Parsing article as Atom...", Logger::CONTINUE);
+
 	id = entry.child_value("id");
 	title = parseAtomTitle(entry.child("title"));
 
@@ -48,12 +52,17 @@ void Article::parseAtom(const xml_node &entry) {
 	link = entry.child_value("link");
 	summary = entry.child_value("summary");
 
-	if (!link.compare("") && (!id.compare(0, 7, "http://") || !id.compare(0, 8, "https://"))) {
+	if (!link.compare("") &&  // link == "" &&
+	    (!id.compare(0, 7, "http://") || !id.compare(0, 8, "https://"))) {  // id[0..7] == "http://" || id[0..8] == "https://"
 		link = id;
 	}
+
+	Logger::log("Completed parsing " + title);
 }
 
 void Article::parseRss(const xml_node &entry) {
+	Logger::log("Parsing article as RSS...", Logger::CONTINUE);
+
 	id = entry.child_value("guid");
 	link = entry.child_value("link");
 	summary = entry.child_value("description");
@@ -66,9 +75,13 @@ void Article::parseRss(const xml_node &entry) {
 		//TODO: Generate unique id
 	}
 
-	if (!link.compare("") && strcmp(entry.child("guid").attribute("isPermaLink").value(), "false") && (!id.compare(0, 7, "http://") || !id.compare(0, 8, "https://"))) {  // link == "" && isPermaLink != "false" && (id[0..7] == "http://" || id[0..8] == "https://")
+	if (!link.compare("") &&  // link == "" &&
+	    strcmp(entry.child("guid").attribute("isPermaLink").value(), "false") &&  // isPermaLink != "false" &&
+	    (!id.compare(0, 7, "http://") || !id.compare(0, 8, "https://"))) {  // id[0..7] == "http://" || id[0..8] == "https://"
 		link = id;
 	}
+
+	Logger::log("Completed parsing " + title);
 }
 
 void Article::print() const {

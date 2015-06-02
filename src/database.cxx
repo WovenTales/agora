@@ -3,17 +3,25 @@
 #include <agora.hxx>
 #include <article.hxx>
 #include <feed.hxx>
+#include <logger.hxx>
 
 #include <iostream>
+#include <sstream>
 #include <string.h>
 
 using namespace pugi;
 
 Database::Database(const char *filename) {
+	ostringstream msg("");
+	msg << "Opening database '" << filename << "'...";
+	Logger::log(msg.str(), Logger::CONTINUE);
+
 	if (sqlite3_open(filename, &db) != SQLITE_OK) {
 		//TODO: More robust error handling
 		cout << "Bad database " << filename << endl;
 	}
+
+	Logger::log("Completed");
 
 	bool old = false;
 	sqlite3_exec(db, "PRAGMA table_info(feeds)", (int (*)(void*, int, char**, char**))existed, &old, NULL);
@@ -34,6 +42,7 @@ Database::Database(const char *filename) {
 		                                        "aSummary,"
 		                                        "aContent);",
 		             NULL, NULL, NULL);
+		Logger::log("New database initialized");
 	}
 }
 
@@ -42,36 +51,50 @@ Database::~Database() {
 }
 
 Article Database::getArticle(const string &id) {
+	Logger::log("Requesting article with id '" + id + "'");
+
 	Article out;
 	string cmd("SELECT * FROM articles where aID = '" + replaceAll(id, "'", "''") + "';");
 	sqlite3_exec(db, cmd.c_str(), (int (*)(void*, int, char**, char**))makeArticle, &out, NULL);
+
 	return out;
 }
 
+void Database::stage(Article *a) {
+	Logger::log("Staging article '" + a->getTitle() + "'");
+	articleStage.push(a);
+}
 void Database::stage(const Feed &f) {
+	Logger::log("Staging feed '" + f.getTitle() + "'");
+
 	feedStage.push(f);
 
-	//TODO: Skips top feed if database already exists
-	//  Continue to have problems wth that in general
 	string id = f.getID();
 	FeedLang lang = f.getLang();
 	xml_node root = f.getRoot();
 	const char *tag = (lang == ATOM ? "entry" : "item");
 	unsigned int count = 0;
+
 	for (xml_node entry = root.child(tag);
 	     entry.type(); // != NULL
 	     entry = entry.next_sibling(tag)) {
 		count++;
 		stage(new Article(entry, id, lang));
 	}
-	cout << "Staged " << count << " articles" << endl;
+
+	ostringstream msg("");
+	msg << "Staged " << count << " articles from feed";
+	Logger::log(msg.str());
 }
 
 void Database::save() {
+	Logger::log("Committing staged elements");
+
 	unsigned int count = 0;
 	string cmd("");
 	string cols("");
 	string vals("");
+
 	while (!feedStage.empty()) {
 		Feed f = feedStage.front();
 		feedStage.pop();
@@ -81,6 +104,8 @@ void Database::save() {
 		string link = f.getLink();
 		string author = f.getAuthor();
 		string description = f.getDescription();
+
+		Logger::log("Generating command for feed '" + title + "'...", Logger::CONTINUE);
 
 		cols = "fID";
 		vals = "'" + replaceAll(id, "'", "''") + "'";
@@ -105,8 +130,12 @@ void Database::save() {
 		//TODO: Only update what's necessary rather than replacing everything
 		cmd += "INSERT INTO feeds (" + cols + ") VALUES (" + vals + ");";
 		count++;
+
+		Logger::log("Completed");
 	}
-	cout << "Saved " << count << " feeds" << endl;
+	ostringstream msgFeed("");
+	msgFeed << "Found " << count << " feeds";
+	Logger::log(msgFeed.str());
 
 	count = 0;
 	while (!articleStage.empty()) {
@@ -120,6 +149,8 @@ void Database::save() {
 		string author = a->getAuthor();
 		string summary = a->getSummary();
 		string content = a->getContent();
+
+		Logger::log("Generating command for article '" + title + "'...", Logger::CONTINUE);
 
 		cols = "aID, fID";
 		vals = "'" + replaceAll(id, "'", "''") + "','" + replaceAll(feedID, "'", "''") + "'";
@@ -150,10 +181,16 @@ void Database::save() {
 
 		delete a;
 		count++;
+
+		Logger::log("Completed");
 	}
-	cout << cmd << endl;
+	ostringstream msgArticle("");
+	msgArticle << "Found " << count << " articles";
+	Logger::log(msgArticle.str());
+
 	exec(cmd);
-	cout << "Saved " << count << " articles" << endl;
+
+	Logger::log("Saved staged elements");
 }
 
 
@@ -165,6 +202,8 @@ int Database::existed(bool *out, int cols, char *data[], char *colNames[]) {
 }
 
 int Database::makeArticle(Article *a, int cols, char *vals[], char *names[]) {
+	Logger::log("Generating article...", Logger::CONTINUE);
+
 	char *curName, *curVal;
 	string id, feedID, title, author, content, link, summary;
 	time_t updated;
@@ -193,6 +232,8 @@ int Database::makeArticle(Article *a, int cols, char *vals[], char *names[]) {
 	}
 
 	*a = Article(id, feedID, title, updated, author, content, link, summary);
+
+	Logger::log("Completed generating '" + title + "'");
 
 	return 0;
 }

@@ -12,7 +12,6 @@ int main(int argc, char *argv[]) {
 	db.save();
 
 	Article a = db.getArticle("http://what-if.xkcd.com/135/");
-	a.print();
 }
 
 

@@ -31,21 +31,20 @@ class Feed {
 	//TODO: Category tags (default/additional for entries)
 	//TODO: Language
 
-	void initialize(const pugi::xml_document&);
 	void parseAtom(const pugi::xml_node&);
 	void parseRss(const pugi::xml_node&);
 
   public:
 	Feed(const char *filename);
 
-	std::string getAuthor() const { return author; };
-	std::string getDescription() const { return description; };
-	std::string getID() const { return id; };
-	FeedLang getLang() const { return lang; };
-	std::string getLink() const { return link; };
-	pugi::xml_node getRoot() const { return root; };
-	std::string getTitle() const { return title; };
-	time_t getUpdateTime() const { return updated; };
+	std::string     getAuthor()      const { return author; };
+	std::string     getDescription() const { return description; };
+	std::string     getID()          const { return id; };
+	FeedLang        getLang()        const { return lang; };
+	std::string     getLink()        const { return link; };
+	pugi::xml_node  getRoot()        const { return root; };
+	std::string     getTitle()       const { return title; };
+	time_t          getUpdateTime()  const { return updated; };
 
 	void print() const;
 };
