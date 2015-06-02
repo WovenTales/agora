@@ -31,7 +31,7 @@ class Article {
 	
   public:
 	Article();
-	Article(const pugi::xml_node&, string fID, const FeedLang);
+	Article(const pugi::xml_node&, string fID, const agora::FeedLang);
 	Article(string id, string feedID, string title, time_t updated, string author ="", string content ="", string link ="", string summary ="");
 	
 	string getAuthor()     { return author; };

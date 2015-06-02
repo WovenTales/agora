@@ -26,7 +26,7 @@ class Feed {
 	string link;
 	string description;
 
-	FeedLang lang;
+	agora::FeedLang lang;
 
 	//TODO: Category tags (default/additional for entries)
 	//TODO: Language
@@ -40,7 +40,7 @@ class Feed {
 	std::string     getAuthor()      const { return author; };
 	std::string     getDescription() const { return description; };
 	std::string     getID()          const { return id; };
-	FeedLang        getLang()        const { return lang; };
+	agora::FeedLang getLang()        const { return lang; };
 	std::string     getLink()        const { return link; };
 	pugi::xml_node  getRoot()        const { return root; };
 	std::string     getTitle()       const { return title; };

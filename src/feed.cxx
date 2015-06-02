@@ -4,9 +4,9 @@
 #include <logger.hxx>
 
 #include <iostream>
-#include <sstream>
 #include <string.h>
 
+using namespace agora;
 using namespace pugi;
 using namespace std;
 

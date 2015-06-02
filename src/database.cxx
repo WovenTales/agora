@@ -9,6 +9,7 @@
 #include <sstream>
 #include <string.h>
 
+using namespace agora;
 using namespace pugi;
 
 Database::Database(const char *filename) {

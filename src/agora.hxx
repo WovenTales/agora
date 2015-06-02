@@ -5,18 +5,19 @@
 #include <string>
 #include <time.h>
 
-enum FeedLang {
-	RSS,
-	ATOM
-};
+namespace agora {
+	enum FeedLang {
+		RSS,
+		ATOM
+	};
 
-std::string replaceAll(std::string, const std::string&, const std::string&);
+	std::string replaceAll(std::string, const std::string&, const std::string&);
 
-//TODO: see http://atomenabled.org/developers/syndication/#text
-const char *parseAtomTitle(const pugi::xml_node &t);
+	//TODO: see http://atomenabled.org/developers/syndication/#text
+	const char *parseAtomTitle(const pugi::xml_node &t);
 
-
-time_t parseTime(const char *t);
-time_t parseTime(std::string t);
+	time_t parseTime(const char *t);
+	time_t parseTime(std::string t);
+}
 
 #endif
