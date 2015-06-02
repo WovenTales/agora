@@ -57,7 +57,7 @@ void Article::parseAtom(const xml_node &entry) {
 		link = id;
 	}
 
-	Logger::log("Completed parsing " + title);
+	Logger::log("Completed parsing '" + title + "'");
 }
 
 void Article::parseRss(const xml_node &entry) {
@@ -81,7 +81,7 @@ void Article::parseRss(const xml_node &entry) {
 		link = id;
 	}
 
-	Logger::log("Completed parsing " + title);
+	Logger::log("Completed parsing '" + title + "'");
 }
 
 void Article::print() const {

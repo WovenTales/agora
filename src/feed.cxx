@@ -45,7 +45,7 @@ void Feed::parseAtom(const xml_node &feed) {
 		link = id;
 	}
 
-	Logger::log("Completed parsing " + title);
+	Logger::log("Completed parsing '" + title + "'");
 }
 
 void Feed::parseRss(const xml_node &feed) {
@@ -63,7 +63,7 @@ void Feed::parseRss(const xml_node &feed) {
 		//TODO: Generate unique id
 	}
 
-	Logger::log("Completed parsing " + title);
+	Logger::log("Completed parsing '" + title + "'");
 }
 
 void Feed::print() const {
