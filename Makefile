@@ -7,13 +7,14 @@ BINDIR = bin
 
 DEFINE = -DLOGFILE=\"agora.log\"
 INCLUDE = -I./$(INCDIR) -lpugixml -lsqlite3
-FLAGS = $(DEFINE) $(INCLUDE) -c
+COMPILE = -c
+FLAGS = $(DEFINE) $(INCLUDE)
 
 OBJECTS = $(FILES:%=$(OBJDIR)/%.o)
 
 
 $(BINDIR)/agora: $(OBJDIR) $(BINDIR) $(OBJECTS)
-	g++ -o $(BINDIR)/agora $(OBJECTS) $(INCLUDE)
+	g++ -o $(BINDIR)/agora $(OBJECTS) $(FLAGS)
 
 debug: FLAGS += -g -DDEBUG
 debug: feedarium
@@ -38,4 +39,4 @@ $(OBJDIR)/feed.o: $(addprefix $(INCDIR)/,agora.hxx article.hxx logger.hxx)
 #$(OBJDIR)/logger.o: $(addprefix $(INCDIR)/,)
 
 $(OBJDIR)/%.o: $(SRCDIR)/%.cxx $(INCDIR)/%.hxx
-	g++ $(FLAGS) -o $(<:$(SRCDIR)%.cxx=$(OBJDIR)%.o) $<
+	g++ $(FLAGS) $(COMPILE) -o $(<:$(SRCDIR)%.cxx=$(OBJDIR)%.o) $<

@@ -5,37 +5,31 @@
 using namespace std;
 
 Logger Logger::logger;
-ofstream Logger::logfile(LOGFILE, ofstream::app);
-bool Logger::terminated(true);
+Logger::ofspacingstream Logger::logfile(LOGFILE, ofstream::app);
 
 Logger::Logger() {
 	//TODO: Check logfile validity
-}
-
-Logger::~Logger() {
-	//TODO: Try to get this code called before we'd need to reopen logfile
-	if (!logfile.is_open()) {
-		logfile.open(LOGFILE, ofstream::app);
-	}
-	if (!terminated) {
-		logfile << endl;
-	}
-	//TODO: Get separating blankline between runs working
-	logfile << endl << endl;
-	logfile.close();
 }
 
 Logger::Flush operator|(Logger::Flush a, Logger::Flush b) {
 	return (Logger::Flush)((int)a | (int)b);
 }
 
+Logger::ofspacingstream::~ofspacingstream() {
+	if (!terminated) {
+		*this << endl;
+	}
+	*this << endl;
+}
+	
+
 void Logger::log(string msg, Logger::Flush flush) {
-	if ((flush & Logger::FORCE) && !terminated) {
+	if ((flush & Logger::FORCE) && !logfile.terminated) {
 		logfile << endl;
-		terminated = true;
+		logfile.terminated = true;
 	}
 
-	if (terminated) {
+	if (logfile.terminated) {
 		char s[32];
 		time_t t;
 
@@ -46,10 +40,10 @@ void Logger::log(string msg, Logger::Flush flush) {
 	}
 
 	logfile << msg;
-	terminated = false;
+	logfile.terminated = false;
 
 	if (!(flush & Logger::CONTINUE)) {
 		logfile << endl;
-		terminated = true;
+		logfile.terminated = true;
 	}
 }

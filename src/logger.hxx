@@ -7,16 +7,26 @@
 //TODO: Allow native inclusion of eg. int elements (currently requires external ostringstream)
 class Logger {
   private:
-	// Require calls of constructor/destructor
+	// Require calls of constructor/destructor rather than never initializing
 	static Logger logger;
 
-	static std::ofstream logfile;
+	class ofspacingstream : public std::ofstream {
+	  private:
+		friend class Logger;
 
-	static bool terminated;
+		bool terminated;
+
+	  public:
+		ofspacingstream(const char* filename,
+		                ios_base::openmode mode = ios_base::out
+		               ) : std::ofstream(filename, mode) {
+			terminated = true; };
+		virtual ~ofspacingstream();
+	};
+	static ofspacingstream logfile;
 
   public:
 	Logger();
-	virtual ~Logger();
 
 	enum Flush {
 		// Use powers of two to allow bitwise OR
