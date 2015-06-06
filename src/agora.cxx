@@ -7,12 +7,10 @@
 int main(int argc, char *argv[]) {
 	Database db(argv[2]);
 	Feed f(argv[1]);
-	//TODO: Does not appear to correctly insert entries
 	db.stage(f);
 	db.save();
 
 	Article a = db.getArticle("http://what-if.xkcd.com/135/");
-	//TODO: Appears to be empty Article
 	a.print();
 }
 

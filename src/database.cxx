@@ -55,7 +55,7 @@ Article Database::getArticle(const string &id) {
 	Logger::log("Requesting article with id '" + id + "'");
 
 	Article out;
-	string cmd("SELECT * FROM articles where aID = '" + replaceAll(id, "'", "''") + "';");
+	string cmd("SELECT * FROM articles WHERE aID = '" + replaceAll(id, "'", "''") + "';");
 	sqlite3_exec(db, cmd.c_str(), (int (*)(void*, int, char**, char**))makeArticle, &out, NULL);
 
 	return out;
@@ -92,7 +92,7 @@ void Database::save() {
 	Logger::log("Committing staged elements");
 
 	unsigned int count = 0;
-	string cmd("");
+	string insert("");
 	string cols("");
 	string vals("");
 
@@ -129,7 +129,7 @@ void Database::save() {
 		}
 
 		//TODO: Only update what's necessary rather than replacing everything
-		cmd += "INSERT INTO feeds (" + cols + ") VALUES (" + vals + ");";
+		insert += "INSERT INTO feeds (" + cols + ") VALUES (" + vals + ");";
 		count++;
 
 		Logger::log("Completed");
@@ -173,12 +173,15 @@ void Database::save() {
 			vals += ",'" + replaceAll(summary, "'", "''") + "'";
 		}
 		if (content.compare("")) {  // content != ""
+			//TODO: Trying to insert (or later update with) content results in command being ignored
+			//  When updated manually, get/makeArticle properly displays, so is likely buffer error of some sort
 			cols += ", aContent";
-			vals += ",'" + replaceAll(content, "'", "''") + "'";
+			//vals += ",'" + replaceAll(content, "'", "''") + "'";
+			vals += ",'SKIPPED'";
 		}
 
 		//TODO: Only update what's necessary rather than replacing everything
-		cmd += "INSERT INTO articles (" + cols + ") VALUES (" + vals + ");";
+		insert += "INSERT INTO articles (" + cols + ") VALUES (" + vals + ");";
 
 		delete a;
 		count++;
@@ -189,7 +192,7 @@ void Database::save() {
 	msgArticle << "Found " << count << " articles";
 	Logger::log(msgArticle.str());
 
-	exec(cmd);
+	exec(insert);
 
 	Logger::log("Saved staged elements");
 }
@@ -213,22 +216,22 @@ int Database::makeArticle(Article *a, int cols, char *vals[], char *names[]) {
 		curName = names[i];
 		curVal = vals[i];
 
-		if (curVal && !strcmp(curName, "aID")) {  // curVal != NULL && curName == "aID"
-			id = curVal;
-		} else if (curVal && !strcmp(curName, "fID")) {  // curVal != NULL && curName == "fID"
-			feedID = string(curVal);
-		} else if (curVal && !strcmp(curName, "aTitle")) {  // curVal != NULL && curName == "aTitle"
-			title = string(curVal);
-		} else if (curVal && !strcmp(curName, "aUpdated")) {  // curVal != NULL && curName == "aUpdated"
+		if (curVal && !strcmp(curName, "aID")) {  // curVal != "" && curName == "aID"
+			id = replaceAll(curVal, "''", "'");
+		} else if (curVal && !strcmp(curName, "fID")) {  // curVal != "" && curName == "fID"
+			feedID = replaceAll(curVal, "''", "'");
+		} else if (curVal && !strcmp(curName, "aTitle")) {  // curVal != "" && curName == "aTitle"
+			title = replaceAll(curVal, "''", "'");
+		} else if (curVal && !strcmp(curName, "aUpdated")) {  // curVal != "" && curName == "aUpdated"
 			updated = parseTime(string(curVal));
-		} else if (curVal && !strcmp(curName, "aLink")) {  // curVal != NULL && curName == "aLink"
-			link = string(curVal);
-		} else if (curVal && !strcmp(curName, "aAuthor")) {  // curVal != NULL && curName == "aAuthor"
-			author = string(curVal);
-		} else if (curVal && !strcmp(curName, "aSummary")) {  // curVal != NULL && curName == "aSummary"
-			summary = string(curVal);
-		} else if (curVal && !strcmp(curName, "aContent")) {  // curVal != NULL && curName == "aContent"
-			content = string(curVal);
+		} else if (curVal && !strcmp(curName, "aLink")) {  // curVal != "" && curName == "aLink"
+			link = replaceAll(curVal, "''", "'");
+		} else if (curVal && !strcmp(curName, "aAuthor")) {  // curVal != "" && curName == "aAuthor"
+			author = replaceAll(curVal, "''", "'");
+		} else if (curVal && !strcmp(curName, "aSummary")) {  // curVal != "" && curName == "aSummary"
+			summary = replaceAll(curVal, "''", "'");
+		} else if (curVal && !strcmp(curName, "aContent")) {  // curVal != "" && curName == "aContent"
+			content = replaceAll(curVal, "''", "'");
 		}
 	}
 
