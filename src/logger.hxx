@@ -2,9 +2,9 @@
 #define LOGGER_H
 
 #include <fstream>
+#include <sstream>
 #include <string>
 
-//TODO: Allow native inclusion of eg. int elements (currently requires external ostringstream)
 class Logger {
   private:
 	// Require calls of constructor/destructor rather than never initializing
@@ -35,8 +35,7 @@ class Logger {
 		FORCE = 2
 	};
 
-	static void log(const char *s, Flush b = FLUSH) { log(std::string(s), b); };
-	static void log(std::string, Flush = FLUSH);
+#include <logger.tcc>
 };
 
 Logger::Flush operator|(Logger::Flush a, Logger::Flush b);

@@ -1,6 +1,7 @@
 #include <logger.hxx>
 
 #include <iostream>
+#include <sstream>
 
 using namespace std;
 
@@ -20,30 +21,4 @@ Logger::ofspacingstream::~ofspacingstream() {
 		*this << endl;
 	}
 	*this << endl;
-}
-	
-
-void Logger::log(string msg, Logger::Flush flush) {
-	if ((flush & Logger::FORCE) && !logfile.terminated) {
-		logfile << endl;
-		logfile.terminated = true;
-	}
-
-	if (logfile.terminated) {
-		char s[32];
-		time_t t;
-
-		time(&t);
-		strftime(s, 32, "%x %X", localtime(&t));
-
-		logfile << "[" << s << "] ";
-	}
-
-	logfile << msg;
-	logfile.terminated = false;
-
-	if (!(flush & Logger::CONTINUE)) {
-		logfile << endl;
-		logfile.terminated = true;
-	}
 }
