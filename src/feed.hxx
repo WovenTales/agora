@@ -17,7 +17,7 @@ class Feed {
 
 	pugi::xml_document *const feed;
 	//! Counter to prevent early deletion of document.
-	unsigned char &refs;
+	unsigned char &docRefs, &feedRefs;
 
 	agora::FeedLang lang;
 
@@ -74,8 +74,15 @@ class Feed {
 	//! \param id new ID string
 	void setID(const std::string &id) { this->id = id; };
 
+	//! Increment the number of instances of this object.
+	void incrementCount() const;
+	//! Decrement the number of instances of this object.
+	void decrementCount() const;
+	//! \return The number of references to this Feed instance
+	unsigned char getCount()  const { return feedRefs; };
+
 	//! Is the feed "live", ie. it references a feed document.
-	bool isLive() const { return (feed); };
+	bool          isLive() const { return (feed); };
 
 	//! Print the feed to cout, for debugging purposes.
 	void print() const;

@@ -24,6 +24,8 @@ Article::Article() : parent(*new Feed) {
 }
 
 Article::Article(const Article &a) : parent(a.parent) {
+	parent.incrementCount();
+
 	id = a.id;
 	title = a.title;
 	updated = a.updated;
@@ -34,10 +36,12 @@ Article::Article(const Article &a) : parent(a.parent) {
 }
 
 /*! \param entry base node of article
- *  \param fID   ID of parent feed
+ *  \param feed  parent feed
  *  \param lang  language by which to parse node
  */
-Article::Article(const pugi::xml_node &entry, const std::string &fID, const FeedLang &lang) : parent(*new Feed(fID, "")) {
+Article::Article(const pugi::xml_node &entry, const Feed &feed, const FeedLang &lang) : parent(feed) {
+	parent.incrementCount();
+
 	if (lang == ATOM) {
 		parseAtom(entry);
 	} else if (lang == RSS) {
@@ -67,6 +71,14 @@ Article::Article(const std::string &id, const std::string &feedID, const std::st
 	this->author = author;
 	this->content = content;
 	this->summary = summary;
+}
+
+Article::~Article() {
+	if (parent.getCount() == 1) {
+		delete &parent;
+	} else {
+		parent.decrementCount();
+	}
 }
 
 

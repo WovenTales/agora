@@ -4,6 +4,7 @@ class Article;
 #include <logger.hxx>
 
 #include <iostream>
+#include <limits.h>
 #include <string.h>
 
 using namespace agora;
@@ -11,7 +12,7 @@ using namespace pugi;
 using namespace std;
 
 
-Feed::Feed() : feed(NULL), refs(*new unsigned char(1)) {
+Feed::Feed() : feed(NULL), docRefs(*new unsigned char(1)), feedRefs(*new unsigned char(1)) {
 	id = "";
 	title = "";
 	updated = parseTime("");
@@ -23,8 +24,8 @@ Feed::Feed() : feed(NULL), refs(*new unsigned char(1)) {
 
 /*! \param f the feed to copy
  */
-Feed::Feed(const Feed &f) : feed(f.feed), refs(f.refs) {
-	f.refs++;
+Feed::Feed(const Feed &f) : feed(f.feed), docRefs(f.docRefs), feedRefs(*new unsigned char(1)) {
+	docRefs++;
 
 	id = f.id;
 	title = f.title;
@@ -38,7 +39,7 @@ Feed::Feed(const Feed &f) : feed(f.feed), refs(f.refs) {
 /*! \param id    feed ID
  *  \param title title
  */
-Feed::Feed(const std::string &id, const std::string &title) : feed(NULL), refs(*new unsigned char(1)) {
+Feed::Feed(const std::string &id, const std::string &title) : feed(NULL), docRefs(*new unsigned char(1)), feedRefs(*new unsigned char(1)) {
 	this->id = id;
 	this->title = title;
 	updated = parseTime("");
@@ -52,7 +53,7 @@ Feed::Feed(const std::string &id, const std::string &title) : feed(NULL), refs(*
 
 /*! \param filename local file to parse
  */
-Feed::Feed(std::string filename) : feed(new xml_document()), refs(*new unsigned char(1)) {
+Feed::Feed(std::string filename) : feed(new xml_document()), docRefs(*new unsigned char(1)), feedRefs(*new unsigned char(1)) {
 	feed->load_file(filename.c_str());
 
 	// Can't use getRoot because it needs to know the language
@@ -71,12 +72,48 @@ Feed::Feed(std::string filename) : feed(new xml_document()), refs(*new unsigned 
 }
 
 Feed::~Feed() {
-	refs--;
-	if (refs == 0) {
-		delete &refs;
+	decrementCount();
+	if (docRefs == 0) {
+		delete &docRefs;
 		if (feed) {
 			delete feed;
 		}
+	}
+	if (feedRefs == 0) {
+		delete &feedRefs;
+	}
+}
+
+
+void Feed::incrementCount() const {
+	if (docRefs == UCHAR_MAX) {
+		//! \todo Better error handling
+		cerr << "Expand size of docRefs!" << endl;
+	} else {
+		docRefs++;
+	}
+
+	if (feedRefs == UCHAR_MAX) {
+		//! \todo Better error handling
+		cerr << "Expand size of feedRefs!" << endl;
+	} else {
+		feedRefs++;
+	}
+}
+
+void Feed::decrementCount() const {
+	if (docRefs == 0) {
+		//! \todo Better error handling
+		cerr << "More deletions of docRefs than additions" << endl;
+	} else {
+		docRefs--;
+	}
+
+	if (feedRefs == UCHAR_MAX) {
+		//! \todo Better error handling
+		cerr << "More deletions of feedRefs than additions" << endl;
+	} else {
+		feedRefs--;
 	}
 }
 

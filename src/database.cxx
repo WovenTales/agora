@@ -109,7 +109,7 @@ void Database::stage(const Feed &f) {
 	for (xml_node entry = root.child(tag);
 	     entry.type(); // != NULL
 	     entry = entry.next_sibling(tag)) {
-		stage(Article(entry, id, lang));
+		stage(Article(entry, *p, lang));
 		count++;
 	}
 
@@ -122,58 +122,14 @@ void Database::stage(const Feed &f) {
 void Database::save() {
 	Logger::log("Committing staged elements");
 
-	unsigned int count = 0;
+	unsigned int countF = 0, countA = 0;
 	string insert("");
 	string cols("");
 	string vals("");
 
-	while (!feedStage.empty()) {
-		const Feed *f = feedStage.front();
-		feedStage.pop();
-
-		string id          = replaceAll(f->getID(), "'", "''");
-		string title       = replaceAll(f->getTitle(), "'", "''");
-		string link        = replaceAll(f->getLink(), "'", "''");
-		string author      = replaceAll(f->getAuthor(), "'", "''");
-		string description = replaceAll(f->getDescription(), "'", "''");
-
-		Logger::log("Generating command for feed '" + title + "'...", Logger::CONTINUE);
-
-		cols = "fID";
-		vals = "'" + id + "'";
-
-		if (title.compare("")) {  // title != ""
-			cols += ", fTitle";
-			vals += ",'" + title + "'";
-		}
-		if (link.compare("")) {  // link != ""
-			cols += ", fLink";
-			vals += ",'" + link + "'";
-		}
-		if (author.compare("")) {  // author != ""
-			cols += ", fAuthor";
-			vals += ",'" + author + "'";
-		}
-		if (description.compare("")) {  // description != ""
-			cols += ", fDesc";
-			vals += ",'" + description + "'";
-		}
-
-		//! \todo Only update what's necessary rather than replacing everything
-		insert += "INSERT INTO feeds (" + cols + ") VALUES (" + vals + ");";
-
-		delete f;
-		count++;
-
-		Logger::log("Completed");
-	}
-	Logger::log("Found ", Logger::CONTINUE);
-	Logger::log(count, Logger::CONTINUE);
-	Logger::log(" feeds");
-
-	count = 0;
+	const Article *a;
 	while (!articleStage.empty()) {
-		const Article *a = articleStage.front();
+		a = articleStage.front();
 		articleStage.pop();
 
 		string id      = replaceAll(a->getID(), "'", "''");
@@ -217,17 +173,62 @@ void Database::save() {
 		insert += "INSERT INTO articles (" + cols + ") VALUES (" + vals + ");";
 
 		delete a;
-		count++;
+		countA++;
 
 		Logger::log("Completed");
 	}
-	Logger::log("Found ", Logger::CONTINUE);
-	Logger::log(count, Logger::CONTINUE);
-	Logger::log(" articles");
+
+	const Feed *f;
+	while (!feedStage.empty()) {
+		f = feedStage.front();
+		feedStage.pop();
+
+		string id          = replaceAll(f->getID(), "'", "''");
+		string title       = replaceAll(f->getTitle(), "'", "''");
+		string link        = replaceAll(f->getLink(), "'", "''");
+		string author      = replaceAll(f->getAuthor(), "'", "''");
+		string description = replaceAll(f->getDescription(), "'", "''");
+
+		Logger::log("Generating command for feed '" + title + "'...", Logger::CONTINUE);
+
+		cols = "fID";
+		vals = "'" + id + "'";
+
+		if (title.compare("")) {  // title != ""
+			cols += ", fTitle";
+			vals += ",'" + title + "'";
+		}
+		if (link.compare("")) {  // link != ""
+			cols += ", fLink";
+			vals += ",'" + link + "'";
+		}
+		if (author.compare("")) {  // author != ""
+			cols += ", fAuthor";
+			vals += ",'" + author + "'";
+		}
+		if (description.compare("")) {  // description != ""
+			cols += ", fDesc";
+			vals += ",'" + description + "'";
+		}
+
+		//! \todo Only update what's necessary rather than replacing everything
+		insert += "INSERT INTO feeds (" + cols + ") VALUES (" + vals + ");";
+
+		if (f->getCount() == 1) {
+			delete f;
+		}
+		countF++;
+
+		Logger::log("Completed");
+	}
 
 	exec(insert);
 
-	Logger::log("Saved staged elements");
+	Logger::log("Saved ", Logger::CONTINUE);
+	Logger::log(countA, Logger::CONTINUE);
+	Logger::log(" articles and ", Logger::CONTINUE);
+	Logger::log(countF, Logger::CONTINUE);
+	Logger::log(" feeds from stage");
 }
 
 

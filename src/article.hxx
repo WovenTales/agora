@@ -39,10 +39,12 @@ class Article {
 	//! Standard copy constructor.
 	Article(const Article&);
 	//! Construct article from given node.
-	Article(const pugi::xml_node&, const std::string&, const agora::FeedLang&);
+	Article(const pugi::xml_node&, const Feed&, const agora::FeedLang&);
 	//! Construct article using given parameters.
 	Article(const std::string&, const std::string&, const std::string&, const std::string&, const time_t&,
 			const std::string& ="", const std::string& ="", const std::string& ="");
+	//! Standard destructor.
+	virtual ~Article();
 	
 	//! \return Author  
 	std::string getAuthor()     const { return author; };  
