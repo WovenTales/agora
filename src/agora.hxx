@@ -5,19 +5,22 @@
 #include <string>
 #include <time.h>
 
+//! Wrapper for global utility functions.
 namespace agora {
+	//! Names recognized feed languages.
 	enum FeedLang {
+		UNKNOWN_LANG,
 		RSS,
 		ATOM
 	};
 
+	//! Replace all instances of one substring with another.
 	std::string replaceAll(std::string, const std::string&, const std::string&);
 
-	//TODO: see http://atomenabled.org/developers/syndication/#text
-	const char *parseAtomTitle(const pugi::xml_node &t);
-
-	time_t parseTime(const char *t);
-	time_t parseTime(std::string t);
+	//! Parse (potentially complex) Atom `<title>` node to string.
+	std::string parseAtomTitle(const pugi::xml_node&);
+	//! Parse variably-formatted string to standard time.
+	time_t parseTime(std::string);
 }
 
 #endif

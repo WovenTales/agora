@@ -2,56 +2,61 @@
 #define ARTICLE_H
 
 #include <agora.hxx>
+class Feed;
 
 #include <pugixml.hpp>
 #include <string>
 #include <time.h>
 
-using namespace std;
-
+//! A particular entry from some feed
 class Article {
   private:
-	string id;
-	string feedID;
-	string title;
-	//TODO: Include in parsing functions (requires recognizing format of string)
+	// Expected members
+	std::string id;
+	std::string feedID;
+	std::string title;
 	time_t updated;
+	std::string link;
 
-	string author;
-	//TODO: see http://atomenabled.org/developers/syndication/#contentElement
-	string content;
-	string link;
-	string summary;
+	// Optional members
+	std::string author;
+	std::string content;  //!\todo See http://atomenabled.org/developers/syndication/#contentElement
+	std::string summary;
 
-	//TODO: Category tags
-	//TODO: Manage <source>
-	
+	/*! \todo Add:
+	 *  category tags
+	 *  \<source> management
+	 */
+
 	void parseAtom(const pugi::xml_node&);
 	void parseRss(const pugi::xml_node&);
 	
   public:
+	//! Default constructor.
 	Article();
-	Article(const pugi::xml_node&, string fID, const agora::FeedLang);
-	Article(string id, string feedID, string title, time_t updated, string author ="", string content ="", string link ="", string summary ="");
+	//! Construct article from given node.
+	Article(const pugi::xml_node&, std::string, const agora::FeedLang);
+	//! Construct article using given parameters.
+	Article(std::string, std::string, std::string, std::string, time_t, std::string ="", std::string ="", std::string ="");
 	
-	string getAuthor()     { return author; };
-	string getContent()    { return content; };
-	string getFID()        { return feedID; };
-	string getID()         { return id; };
-	string getLink()       { return link; };
-	string getSummary()    { return summary; };
-	string getTitle()      { return title; };
-	time_t getUpdateTime() { return updated; };
+	//! \return Author  
+	std::string getAuthor()     const { return author; };  
+	//! \return Content
+	std::string getContent()    const { return content; };
+	//! \return ID of parent feed
+	std::string getFID()        const { return feedID; };
+	//! \return %Article ID
+	std::string getID()         const { return id; };
+	//! \return Link to original article
+	std::string getLink()       const { return link; };
+	//! \return Summary of content
+	std::string getSummary()    const { return summary; };
+	//! \return Title
+	std::string getTitle()      const { return title; };
+	//! \return Time of last update
+	time_t      getUpdateTime() const { return updated; };
 
-	void setAuthor     (string s) { author = s; };
-	void setContent    (string s) { content = s; };
-	void setFID        (string s) { feedID = s; };
-	void setID         (string s) { id = s; };
-	void setLink       (string s) { link = s; };
-	void setSummary    (string s) { summary = s; };
-	void setTitle      (string s) { title = s; };
-	void setUpdateTime (time_t t) { updated = t; };
-
+	//! Print the article to cout, for debugging purposes
 	void print() const;
 };
 

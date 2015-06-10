@@ -6,28 +6,29 @@
 #include <logger.hxx>
 
 #include <iostream>
-#include <sstream>
 #include <string.h>
 
 using namespace agora;
 using namespace pugi;
+using namespace std;
 
-Database::Database(const char *filename) {
-	ostringstream msg("");
-	msg << "Opening database '" << filename << "'...";
-	Logger::log(msg.str(), Logger::CONTINUE);
+/*! \param filename the SQLite3 database to associate this Database with
+ */
+Database::Database(std::string filename) {
+	Logger::log("Opening database '" + filename + "'...", Logger::CONTINUE);
 
-	if (sqlite3_open(filename, &db) != SQLITE_OK) {
-		//TODO: More robust error handling
+	if (sqlite3_open(filename.c_str(), &db) != SQLITE_OK) {
+		//! \todo More robust error handling
 		cout << "Bad database " << filename << endl;
 	}
 
 	Logger::log("Completed");
 
-	bool old = false;
-	sqlite3_exec(db, "PRAGMA table_info(feeds)", (int (*)(void*, int, char**, char**))existed, &old, NULL);
+	bool init = true;
+	sqlite3_exec(db, "PRAGMA table_info(feeds)", (int (*)(void*, int, char**, char**))isEmpty, &init, NULL);
 
-	if (!old) {
+	if (init) {
+		// Initialize database
 		sqlite3_exec(db, "CREATE TABLE feeds (fID        NOT NULL PRIMARY KEY ON CONFLICT REPLACE,"
 		                                      "fTitle,"
 		                                      "fUpdated,"
@@ -48,10 +49,17 @@ Database::Database(const char *filename) {
 }
 
 Database::~Database() {
+	save();
 	sqlite3_close(db);
 }
 
-Article Database::getArticle(const string &id) {
+/*! If database doesn't contain given ID, returns Article with default values
+ *  (mostly empty strings) for all members.
+ *
+ *  \param id article ID
+ *  \return New Article with values according to given ID
+ */
+Article Database::getArticle(const std::string &id) {
 	Logger::log("Requesting article with id '" + id + "'");
 
 	Article out;
@@ -61,31 +69,40 @@ Article Database::getArticle(const string &id) {
 	return out;
 }
 
-void Database::stage(Article *a) {
-	Logger::log("Staging article '" + a->getTitle() + "'");
-	articleStage.push(a);
+/*! \param a the article to stage
+ */
+void Database::stage(Article a) {
+	// Create a new instance so user doesn't have to worry about scope
+	Article *p = new Article(a);
+	Logger::log("Staging article '" + p->getTitle() + "'");
+
+	articleStage.push(p);
 }
-void Database::stage(const Feed &f) {
-	Logger::log("Staging feed '" + f.getTitle() + "'");
+/*! \param f the feed to stage
+ */
+void Database::stage(Feed f) {
+	// Create a new instance so user doesn't have to worry about scope
+	Feed *p = new Feed(f);
+	Logger::log("Staging feed '" + p->getTitle() + "'");
 
-	feedStage.push(f);
+	feedStage.push(p);
 
-	string id = f.getID();
-	FeedLang lang = f.getLang();
-	xml_node root = f.getRoot();
+	string id = p->getID();
+	FeedLang lang = p->getLang();
+	xml_node root = p->getRoot();
 	const char *tag = (lang == ATOM ? "entry" : "item");
 	unsigned int count = 0;
 
 	for (xml_node entry = root.child(tag);
 	     entry.type(); // != NULL
 	     entry = entry.next_sibling(tag)) {
+		stage(*new Article(entry, id, lang));
 		count++;
-		stage(new Article(entry, id, lang));
 	}
 
-	ostringstream msg("");
-	msg << "Staged " << count << " articles from feed";
-	Logger::log(msg.str());
+	Logger::log("Staged ", Logger::CONTINUE);
+	Logger::log(count, Logger::CONTINUE);
+	Logger::log(" articles from feed");
 }
 
 void Database::save() {
@@ -97,90 +114,90 @@ void Database::save() {
 	string vals("");
 
 	while (!feedStage.empty()) {
-		Feed f = feedStage.front();
+		const Feed *f = feedStage.front();
 		feedStage.pop();
 
-		string id = f.getID();
-		string title = f.getTitle();
-		string link = f.getLink();
-		string author = f.getAuthor();
-		string description = f.getDescription();
+		string id          = replaceAll(f->getID(), "'", "''");
+		string title       = replaceAll(f->getTitle(), "'", "''");
+		string link        = replaceAll(f->getLink(), "'", "''");
+		string author      = replaceAll(f->getAuthor(), "'", "''");
+		string description = replaceAll(f->getDescription(), "'", "''");
 
 		Logger::log("Generating command for feed '" + title + "'...", Logger::CONTINUE);
 
 		cols = "fID";
-		vals = "'" + replaceAll(id, "'", "''") + "'";
+		vals = "'" + id + "'";
 
 		if (title.compare("")) {  // title != ""
 			cols += ", fTitle";
-			vals += ",'" + replaceAll(title, "'", "''") + "'";
+			vals += ",'" + title + "'";
 		}
 		if (link.compare("")) {  // link != ""
 			cols += ", fLink";
-			vals += ",'" + replaceAll(link, "'", "''") + "'";
+			vals += ",'" + link + "'";
 		}
 		if (author.compare("")) {  // author != ""
 			cols += ", fAuthor";
-			vals += ",'" + replaceAll(author, "'", "''") + "'";
+			vals += ",'" + author + "'";
 		}
 		if (description.compare("")) {  // description != ""
 			cols += ", fDesc";
-			vals += ",'" + replaceAll(description, "'", "''") + "'";
+			vals += ",'" + description + "'";
 		}
 
-		//TODO: Only update what's necessary rather than replacing everything
+		//! \todo Only update what's necessary rather than replacing everything
 		insert += "INSERT INTO feeds (" + cols + ") VALUES (" + vals + ");";
 		count++;
 
 		Logger::log("Completed");
 	}
-	ostringstream msgFeed("");
-	msgFeed << "Found " << count << " feeds";
-	Logger::log(msgFeed.str());
+	Logger::log("Found ", Logger::CONTINUE);
+	Logger::log(count, Logger::CONTINUE);
+	Logger::log(" feeds");
 
 	count = 0;
 	while (!articleStage.empty()) {
-		Article *a = articleStage.front();
+		const Article *a = articleStage.front();
 		articleStage.pop();
 
-		string id = a->getID();
-		string feedID = a->getFID();
-		string title = a->getTitle();
-		string link = a->getLink();
-		string author = a->getAuthor();
-		string summary = a->getSummary();
-		string content = a->getContent();
+		string id      = replaceAll(a->getID(), "'", "''");
+		string feedID  = replaceAll(a->getFID(), "'", "''");
+		string title   = replaceAll(a->getTitle(), "'", "''");
+		string link    = replaceAll(a->getLink(), "'", "''");
+		string author  = replaceAll(a->getAuthor(), "'", "''");
+		string summary = replaceAll(a->getSummary(), "'", "''");
+		string content = replaceAll(a->getContent(), "'", "''");
 
 		Logger::log("Generating command for article '" + title + "'...", Logger::CONTINUE);
 
 		cols = "aID, fID";
-		vals = "'" + replaceAll(id, "'", "''") + "','" + replaceAll(feedID, "'", "''") + "'";
+		vals = "'" + id + "','" + feedID + "'";
 
 		if (title.compare("")) {  // title != ""
 			cols += ", aTitle";
-			vals += ",'" + replaceAll(title, "'", "''") + "'";
+			vals += ",'" + title + "'";
 		}
 		if (link.compare("")) {  // link != ""
 			cols += ", aLink";
-			vals += ",'" + replaceAll(link, "'", "''") + "'";
+			vals += ",'" + link + "'";
 		}
 		if (author.compare("")) {  // author != ""
 			cols += ", aAuthor";
-			vals += ",'" + replaceAll(author, "'", "''") + "'";
+			vals += ",'" + author + "'";
 		}
 		if (summary.compare("")) {  // summary != ""
 			cols += ", aSummary";
-			vals += ",'" + replaceAll(summary, "'", "''") + "'";
+			vals += ",'" + summary + "'";
 		}
 		if (content.compare("")) {  // content != ""
-			//TODO: Trying to insert (or later update with) content results in command being ignored
-			//  When updated manually, get/makeArticle properly displays, so is likely buffer error of some sort
+			//! \bug Trying to insert (or later update with) content results in command being ignored\n
+			//! When updated manually, get/makeArticle properly displays, so is likely buffer error of some sort
 			cols += ", aContent";
-			//vals += ",'" + replaceAll(content, "'", "''") + "'";
+			//vals += ",'" + content + "'";
 			vals += ",'SKIPPED'";
 		}
 
-		//TODO: Only update what's necessary rather than replacing everything
+		//! \todo Only update what's necessary rather than replacing everything
 		insert += "INSERT INTO articles (" + cols + ") VALUES (" + vals + ");";
 
 		delete a;
@@ -188,9 +205,9 @@ void Database::save() {
 
 		Logger::log("Completed");
 	}
-	ostringstream msgArticle("");
-	msgArticle << "Found " << count << " articles";
-	Logger::log(msgArticle.str());
+	Logger::log("Found ", Logger::CONTINUE);
+	Logger::log(count, Logger::CONTINUE);
+	Logger::log(" articles");
 
 	exec(insert);
 
@@ -198,9 +215,11 @@ void Database::save() {
 }
 
 
-int Database::existed(bool *out, int cols, char *data[], char *colNames[]) {
-	if (cols > 0) {
+int Database::isEmpty(bool *out, int cols, char *data[], char *colNames[]) {
+	if (cols == 0) {
 		*out = true;
+	} else {
+		*out = false;
 	}
 	return 0;
 }
@@ -214,28 +233,28 @@ int Database::makeArticle(Article *a, int cols, char *vals[], char *names[]) {
 
 	for (int i = 0; i < cols; i++) {
 		curName = names[i];
-		curVal = vals[i];
+		curVal = replaceAll(vals[i], "''", "'");
 
 		if (curVal && !strcmp(curName, "aID")) {  // curVal != "" && curName == "aID"
-			id = replaceAll(curVal, "''", "'");
+			id = curVal;
 		} else if (curVal && !strcmp(curName, "fID")) {  // curVal != "" && curName == "fID"
-			feedID = replaceAll(curVal, "''", "'");
+			feedID = curVal;
 		} else if (curVal && !strcmp(curName, "aTitle")) {  // curVal != "" && curName == "aTitle"
-			title = replaceAll(curVal, "''", "'");
+			title = curVal;
 		} else if (curVal && !strcmp(curName, "aUpdated")) {  // curVal != "" && curName == "aUpdated"
 			updated = parseTime(string(curVal));
 		} else if (curVal && !strcmp(curName, "aLink")) {  // curVal != "" && curName == "aLink"
-			link = replaceAll(curVal, "''", "'");
+			link = curVal;
 		} else if (curVal && !strcmp(curName, "aAuthor")) {  // curVal != "" && curName == "aAuthor"
-			author = replaceAll(curVal, "''", "'");
+			author = curVal;
 		} else if (curVal && !strcmp(curName, "aSummary")) {  // curVal != "" && curName == "aSummary"
-			summary = replaceAll(curVal, "''", "'");
+			summary = curVal;
 		} else if (curVal && !strcmp(curName, "aContent")) {  // curVal != "" && curName == "aContent"
-			content = replaceAll(curVal, "''", "'");
+			content = curVal;
 		}
 	}
 
-	*a = Article(id, feedID, title, updated, author, content, link, summary);
+	*a = Article(id, feedID, title, link, updated, author, content, summary);
 
 	Logger::log("Completed generating '" + title + "'");
 

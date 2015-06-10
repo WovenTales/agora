@@ -1,6 +1,15 @@
 // Contained in namespace Logger
 
-//TODO: Handle multi-part messages instead of requiring multiple calls with Flush::CONTINUE
+//! Log a message to the logfile
+/*! \p msgTemplate is passed into a std::ostringstream, and so this can handle any types that can.
+ *
+ *  Automatically prefixes date if message is printed at the beginning of the line.
+ *
+ *  \todo Handle multi-part messages instead of requiring multiple calls with Flush::CONTINUE
+ *
+ *  \param msgTemplate the message or object to log
+ *  \param flush       the desired method of handling line endings
+ */
 template <typename T>
 static void log(T msgTemplate, Flush flush = FLUSH) {
 	std::ostringstream msg("");
