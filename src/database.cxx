@@ -164,9 +164,8 @@ void Database::save() {
 		if (content.compare("")) {  // content != ""
 			//! \bug Trying to insert (or later update with) content results in command being ignored\n
 			//! When updated manually, get/makeArticle properly displays, so is likely buffer error of some sort
-			cols += ", aContent";
+			//cols += ", aContent";
 			//vals += ",'" + content + "'";
-			vals += ",'SKIPPED'";
 		}
 
 		//! \todo Only update what's necessary rather than replacing everything
