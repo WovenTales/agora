@@ -11,9 +11,13 @@ Logger::Logger() {
 	//! \todo Check logfile validity
 }
 
-Logger::Flush operator|(Logger::Flush a, Logger::Flush b) {
+
+
+Logger::Flush operator|(const Logger::Flush &a, const Logger::Flush &b) {
 	return (Logger::Flush)((int)a | (int)b);
 }
+
+
 
 Logger::ofspacingstream::~ofspacingstream() {
 	if (!terminated) {

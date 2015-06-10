@@ -3,7 +3,7 @@
 #include <article.hxx>
 #include <database.hxx>
 #include <feed.hxx>
-#include <logger.hxx>
+
 
 int main(int argc, char *argv[]) {
 	Database db(argv[2]);
@@ -11,9 +11,11 @@ int main(int argc, char *argv[]) {
 	db.stage(f);
 	db.save();
 
-	Article a = db.getArticle("http://what-if.xkcd.com/135/");
-	a.print();
+	Article *a = db.getArticle("http://what-if.xkcd.com/135/");
+	a->print();
+	delete a;
 }
+
 
 
 /*! \todo See http://atomenabled.org/developers/syndication/#text
@@ -22,8 +24,6 @@ int main(int argc, char *argv[]) {
  *  \return A string representation of the given title
  */
 std::string agora::parseAtomTitle(const pugi::xml_node &t) {
-	Logger::log("Parsing title");
-
 	std::string title = t.child_value();
 	return title;
 }
@@ -35,8 +35,7 @@ std::string agora::parseAtomTitle(const pugi::xml_node &t) {
  *  \param t the string to parse
  *  \return Correctly parsed time
  */
-time_t agora::parseTime(std::string t) {
-	Logger::log("Parsing time '" + t + "'");
+time_t agora::parseTime(const std::string &t) {
 	return time(NULL);
 }
 

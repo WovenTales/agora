@@ -12,9 +12,10 @@ using namespace agora;
 using namespace pugi;
 using namespace std;
 
+
 /*! \param filename the SQLite3 database to associate this Database with
  */
-Database::Database(std::string filename) {
+Database::Database(const std::string &filename) {
 	Logger::log("Opening database '" + filename + "'...", Logger::CONTINUE);
 
 	if (sqlite3_open(filename.c_str(), &db) != SQLITE_OK) {
@@ -53,25 +54,36 @@ Database::~Database() {
 	sqlite3_close(db);
 }
 
-/*! If database doesn't contain given ID, returns Article with default values
+
+/*! If database doesn't contain given ID, returns an Article with default values
  *  (mostly empty strings) for all members.
  *
+ *  The returned article should be freed with \c delete when done.
+ *
  *  \param id article ID
- *  \return New Article with values according to given ID
+ *  \return Pointer to a new Article with values according to given ID
  */
-Article Database::getArticle(const std::string &id) {
-	Logger::log("Requesting article with id '" + id + "'");
+Article *Database::getArticle(const std::string &id) {
+	Logger::log("Requesting article with id '" + id + "'...", Logger::CONTINUE);
 
-	Article out;
+	Article *out = NULL;
 	string cmd("SELECT * FROM articles WHERE aID = '" + replaceAll(id, "'", "''") + "';");
 	sqlite3_exec(db, cmd.c_str(), (int (*)(void*, int, char**, char**))makeArticle, &out, NULL);
+
+	if (!out) {
+		Logger::log("No such article found");
+		out = new Article();
+	} else {
+		Logger::log("Found");
+	}
 
 	return out;
 }
 
+
 /*! \param a the article to stage
  */
-void Database::stage(Article a) {
+void Database::stage(const Article &a) {
 	// Create a new instance so user doesn't have to worry about scope
 	Article *p = new Article(a);
 	Logger::log("Staging article '" + p->getTitle() + "'");
@@ -80,7 +92,8 @@ void Database::stage(Article a) {
 }
 /*! \param f the feed to stage
  */
-void Database::stage(Feed f) {
+
+void Database::stage(const Feed &f) {
 	// Create a new instance so user doesn't have to worry about scope
 	Feed *p = new Feed(f);
 	Logger::log("Staging feed '" + p->getTitle() + "'");
@@ -96,7 +109,7 @@ void Database::stage(Feed f) {
 	for (xml_node entry = root.child(tag);
 	     entry.type(); // != NULL
 	     entry = entry.next_sibling(tag)) {
-		stage(*new Article(entry, id, lang));
+		stage(Article(entry, id, lang));
 		count++;
 	}
 
@@ -104,6 +117,7 @@ void Database::stage(Feed f) {
 	Logger::log(count, Logger::CONTINUE);
 	Logger::log(" articles from feed");
 }
+
 
 void Database::save() {
 	Logger::log("Committing staged elements");
@@ -147,6 +161,8 @@ void Database::save() {
 
 		//! \todo Only update what's necessary rather than replacing everything
 		insert += "INSERT INTO feeds (" + cols + ") VALUES (" + vals + ");";
+
+		delete f;
 		count++;
 
 		Logger::log("Completed");
@@ -224,39 +240,37 @@ int Database::isEmpty(bool *out, int cols, char *data[], char *colNames[]) {
 	return 0;
 }
 
-int Database::makeArticle(Article *a, int cols, char *vals[], char *names[]) {
-	Logger::log("Generating article...", Logger::CONTINUE);
+int Database::makeArticle(Article **a, int cols, char *vals[], char *names[]) {
+	//! \todo Delete old article at *a
 
-	char *curName, *curVal;
+	string curName, curVal;
 	string id, feedID, title, author, content, link, summary;
 	time_t updated;
 
 	for (int i = 0; i < cols; i++) {
 		curName = names[i];
-		curVal = replaceAll(vals[i], "''", "'");
+		curVal = (vals[i] ? replaceAll(vals[i], "''", "'") : "");
 
-		if (curVal && !strcmp(curName, "aID")) {  // curVal != "" && curName == "aID"
+		if (!curVal.empty() && !curName.compare("aID")) {  // curVal != "" && curName == "aID"
 			id = curVal;
-		} else if (curVal && !strcmp(curName, "fID")) {  // curVal != "" && curName == "fID"
+		} else if (!curVal.empty() && !curName.compare("fID")) {  // curVal != "" && curName == "fID"
 			feedID = curVal;
-		} else if (curVal && !strcmp(curName, "aTitle")) {  // curVal != "" && curName == "aTitle"
+		} else if (!curVal.empty() && !curName.compare("aTitle")) {  // curVal != "" && curName == "aTitle"
 			title = curVal;
-		} else if (curVal && !strcmp(curName, "aUpdated")) {  // curVal != "" && curName == "aUpdated"
-			updated = parseTime(string(curVal));
-		} else if (curVal && !strcmp(curName, "aLink")) {  // curVal != "" && curName == "aLink"
+		} else if (!curVal.empty() && !curName.compare("aUpdated")) {  // curVal != "" && curName == "aUpdated"
+			updated = parseTime(curVal);
+		} else if (!curVal.empty() && !curName.compare("aLink")) {  // curVal != "" && curName == "aLink"
 			link = curVal;
-		} else if (curVal && !strcmp(curName, "aAuthor")) {  // curVal != "" && curName == "aAuthor"
+		} else if (!curVal.empty() && !curName.compare("aAuthor")) {  // curVal != "" && curName == "aAuthor"
 			author = curVal;
-		} else if (curVal && !strcmp(curName, "aSummary")) {  // curVal != "" && curName == "aSummary"
+		} else if (!curVal.empty() && !curName.compare("aSummary")) {  // curVal != "" && curName == "aSummary"
 			summary = curVal;
-		} else if (curVal && !strcmp(curName, "aContent")) {  // curVal != "" && curName == "aContent"
+		} else if (!curVal.empty() && !curName.compare("aContent")) {  // curVal != "" && curName == "aContent"
 			content = curVal;
 		}
 	}
 
-	*a = Article(id, feedID, title, link, updated, author, content, summary);
-
-	Logger::log("Completed generating '" + title + "'");
+	*a = new Article(id, feedID, title, link, updated, author, content, summary);
 
 	return 0;
 }

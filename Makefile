@@ -20,7 +20,7 @@ $(BINDIR)/agora: $(OBJDIR) $(BINDIR) $(OBJECTS)
 	g++ -o $(BINDIR)/agora $(OBJECTS) $(FLAGS)
 
 debug: FLAGS += -g -DDEBUG
-debug: feedarium
+debug: $(BINDIR)/agora
 
 # Provide simple name to call
 docs: $(DOCDIR)/html
@@ -42,10 +42,10 @@ $(BINDIR):
 
 #TODO: Figure out how to separate .o and .hxx dependencies for proper cascading rebuilding
 #        (eg. editing logger.tcc should rebuild everything, but would only rebuild logger.o)
-$(OBJDIR)/agora.o:    $(addprefix $(INCDIR)/,article.hxx database.hxx feed.hxx logger.hxx)
-$(OBJDIR)/article.o:  $(addprefix $(INCDIR)/,agora.hxx logger.hxx)
+$(OBJDIR)/agora.o:    $(addprefix $(INCDIR)/,article.hxx database.hxx feed.hxx)
+$(OBJDIR)/article.o:  $(addprefix $(INCDIR)/,agora.hxx feed.hxx logger.hxx)
 $(OBJDIR)/database.o: $(addprefix $(INCDIR)/,agora.hxx article.hxx feed.hxx logger.hxx)
-$(OBJDIR)/feed.o:     $(addprefix $(INCDIR)/,agora.hxx article.hxx logger.hxx)
+$(OBJDIR)/feed.o:     $(addprefix $(INCDIR)/,agora.hxx logger.hxx)
 $(OBJDIR)/logger.o:   $(addprefix $(INCDIR)/,logger.tcc)
 
 $(OBJDIR)/%.o: $(SRCDIR)/%.cxx $(INCDIR)/%.hxx

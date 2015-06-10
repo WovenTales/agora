@@ -8,12 +8,13 @@ class Feed;
 #include <string>
 #include <time.h>
 
-//! A particular entry from some feed
+
+//! A particular entry from some feed.
 class Article {
   private:
 	// Expected members
 	std::string id;
-	std::string feedID;
+	const Feed &parent;
 	std::string title;
 	time_t updated;
 	std::string link;
@@ -23,7 +24,8 @@ class Article {
 	std::string content;  //!\todo See http://atomenabled.org/developers/syndication/#contentElement
 	std::string summary;
 
-	/*! \todo Add:
+	/*! \class Article
+	 *  \todo Add:
 	 *  category tags
 	 *  \<source> management
 	 */
@@ -34,17 +36,20 @@ class Article {
   public:
 	//! Default constructor.
 	Article();
+	//! Standard copy constructor.
+	Article(const Article&);
 	//! Construct article from given node.
-	Article(const pugi::xml_node&, std::string, const agora::FeedLang);
+	Article(const pugi::xml_node&, const std::string&, const agora::FeedLang&);
 	//! Construct article using given parameters.
-	Article(std::string, std::string, std::string, std::string, time_t, std::string ="", std::string ="", std::string ="");
+	Article(const std::string&, const std::string&, const std::string&, const std::string&, const time_t&,
+			const std::string& ="", const std::string& ="", const std::string& ="");
 	
 	//! \return Author  
 	std::string getAuthor()     const { return author; };  
 	//! \return Content
 	std::string getContent()    const { return content; };
 	//! \return ID of parent feed
-	std::string getFID()        const { return feedID; };
+	std::string getFID()        const;
 	//! \return %Article ID
 	std::string getID()         const { return id; };
 	//! \return Link to original article
@@ -56,7 +61,7 @@ class Article {
 	//! \return Time of last update
 	time_t      getUpdateTime() const { return updated; };
 
-	//! Print the article to cout, for debugging purposes
+	//! Print the article to cout, for debugging purposes.
 	void print() const;
 };
 

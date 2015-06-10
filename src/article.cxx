@@ -1,5 +1,6 @@
 #include <article.hxx>
 
+#include <feed.hxx>
 #include <logger.hxx>
 
 #include <iostream>
@@ -9,11 +10,11 @@ using namespace agora;
 using namespace pugi;
 using namespace std;
 
+
 /*! Sets all parameters to empty string or equivalent.
  */
-Article::Article() {
+Article::Article() : parent(*new Feed) {
 	id = "";
-	feedID = "";
 	title = "";
 	updated = parseTime("");
 	author = "";
@@ -21,13 +22,22 @@ Article::Article() {
 	link = "";
 	summary = "";
 }
+
+Article::Article(const Article &a) : parent(a.parent) {
+	id = a.id;
+	title = a.title;
+	updated = a.updated;
+	author = a.author;
+	content = a.content;
+	link = a.link;
+	summary = a.summary;
+}
+
 /*! \param entry base node of article
  *  \param fID   ID of parent feed
  *  \param lang  language by which to parse node
  */
-Article::Article(const pugi::xml_node &entry, std::string fID, const agora::FeedLang lang) {
-	feedID = fID;
-
+Article::Article(const pugi::xml_node &entry, const std::string &fID, const FeedLang &lang) : parent(*new Feed(fID, "")) {
 	if (lang == ATOM) {
 		parseAtom(entry);
 	} else if (lang == RSS) {
@@ -36,6 +46,7 @@ Article::Article(const pugi::xml_node &entry, std::string fID, const agora::Feed
 		cerr << "Invalid language for parsing" << endl;
 	}
 }
+
 /*! \todo Try to find something like Python's parameter dictionay so order's not as difficult to maintain
  *
  *  \param id      article ID
@@ -47,9 +58,9 @@ Article::Article(const pugi::xml_node &entry, std::string fID, const agora::Feed
  *  \param content content
  *  \param summary summary
  */
-Article::Article(std::string id, std::string feedID, std::string title, std::string link, time_t updated, std::string author, std::string content, std::string summary) {
+Article::Article(const std::string &id, const std::string &feedID, const std::string &title, const std::string &link, const time_t &updated,
+		const std::string &author, const std::string &content, const std::string &summary) : parent(*new Feed(feedID, "")) {
 	this->id = id;
-	this->feedID = feedID;
 	this->title = title;
 	this->link = link;
 	this->updated = updated;
@@ -57,6 +68,12 @@ Article::Article(std::string id, std::string feedID, std::string title, std::str
 	this->content = content;
 	this->summary = summary;
 }
+
+
+string Article::getFID() const {
+	return parent.getID();
+}
+
 
 void Article::parseAtom(const xml_node &entry) {
 	Logger::log("Parsing article as Atom...", Logger::CONTINUE);
@@ -106,6 +123,7 @@ void Article::parseRss(const xml_node &entry) {
 
 	Logger::log("Completed parsing '" + title + "'");
 }
+
 
 void Article::print() const {
 	cout << title << " (#" << id << ")" << endl;

@@ -1,6 +1,6 @@
 #include <feed.hxx>
 
-#include <article.hxx>
+class Article;
 #include <logger.hxx>
 
 #include <iostream>
@@ -10,10 +10,49 @@ using namespace agora;
 using namespace pugi;
 using namespace std;
 
+
+Feed::Feed() : feed(NULL), refs(*new unsigned char(1)) {
+	id = "";
+	title = "";
+	updated = parseTime("");
+	author = "";
+	link = "";
+	description = "";
+	lang = UNKNOWN_LANG;
+}
+
+/*! \param f the feed to copy
+ */
+Feed::Feed(const Feed &f) : feed(f.feed), refs(f.refs) {
+	f.refs++;
+
+	id = f.id;
+	title = f.title;
+	updated = f.updated;
+	author = f.author;
+	link = f.link;
+	description = f.description;
+	lang = f.lang;
+}
+
+/*! \param id    feed ID
+ *  \param title title
+ */
+Feed::Feed(const std::string &id, const std::string &title) : feed(NULL), refs(*new unsigned char(1)) {
+	this->id = id;
+	this->title = title;
+	updated = parseTime("");
+
+	author = "";
+	link = "";
+	description = "";
+
+	lang = UNKNOWN_LANG;
+}
+
 /*! \param filename local file to parse
  */
-Feed::Feed(std::string filename) {
-	feed = new xml_document;
+Feed::Feed(std::string filename) : feed(new xml_document()), refs(*new unsigned char(1)) {
 	feed->load_file(filename.c_str());
 
 	// Can't use getRoot because it needs to know the language
@@ -32,10 +71,15 @@ Feed::Feed(std::string filename) {
 }
 
 Feed::~Feed() {
-	//! \todo Crashes if explicitly deleted, but likely cause of a number of the memory leaks\n
-	//!         Maybe it's not properly gathering loose references to nodes?
-//	delete feed;
+	refs--;
+	if (refs == 0) {
+		delete &refs;
+		if (feed) {
+			delete feed;
+		}
+	}
 }
+
 
 xml_node Feed::getRoot() const {
 	if (lang == RSS) {
@@ -44,6 +88,7 @@ xml_node Feed::getRoot() const {
 		return feed->child("feed");
 	}
 };
+
 
 void Feed::parseAtom(const xml_node &feed) {
 	Logger::log("Parsing feed as Atom...", Logger::CONTINUE);
@@ -68,7 +113,7 @@ void Feed::parseAtom(const xml_node &feed) {
 }
 
 void Feed::parseRss(const xml_node &feed) {
-	//! \todo Specifically, RSS 2.0; include support for older standards.
+	//! \todo Specifically, RSS 2.0; include support for older standards
 	Logger::log("Parsing feed as RSS...", Logger::CONTINUE);
 
 	lang = RSS;
@@ -85,6 +130,7 @@ void Feed::parseRss(const xml_node &feed) {
 
 	Logger::log("Completed parsing '" + title + "'");
 }
+
 
 void Feed::print() const {
 	cout << title << (description != "" ? ": " : "") << description << endl;

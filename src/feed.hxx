@@ -9,12 +9,17 @@
 
 using namespace std;
 
-//! An abstraction for a web news feed
+
+//! An abstraction for a web news feed.
 class Feed {
   private:
-	Feed();
+	Feed &operator=(const Feed&);
 
-	pugi::xml_document *feed;
+	pugi::xml_document *const feed;
+	//! Counter to prevent early deletion of document.
+	unsigned char &refs;
+
+	agora::FeedLang lang;
 
 	// Expected members
 	string id;
@@ -27,21 +32,26 @@ class Feed {
 	string link;
 	string description;
 
-	/*!\todo Add:
-	 * contributor tags,
-	 * category tags (as default/additional for entries),
-	 * language
+	/*! \class Feed
+	 *  \todo Add:
+	 *  contributor tags,
+	 *  category tags (as default/additional for entries),
+	 *  language
 	 */
 
-	agora::FeedLang lang;
-
 	void parseAtom(const pugi::xml_node&);
-	void parseRss(const pugi::xml_node&);
+	void parseRss (const pugi::xml_node&);
 
   public:
-	//! Construct feed from local file
+	//! Default constructor.
+	Feed();
+	//! Copy constructor.
+	Feed(const Feed&);
+	//! Build feed manually.
+	Feed(const std::string&, const std::string&);
+	//! Construct feed from local file.
 	Feed(std::string filename);
-	//! Standard deconstructor
+	//! Standard deconstructor.
 	virtual ~Feed();
 
 	//! \return Author
@@ -61,7 +71,13 @@ class Feed {
 	//! \return Time of last update
 	time_t          getUpdateTime()  const { return updated; };
 
-	//! Print the feed to cout, for debugging purposes
+	//! \param id new ID string
+	void setID(const std::string &id) { this->id = id; };
+
+	//! Is the feed "live", ie. it references a feed document.
+	bool isLive() const { return (feed); };
+
+	//! Print the feed to cout, for debugging purposes.
 	void print() const;
 };
 

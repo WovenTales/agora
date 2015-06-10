@@ -5,6 +5,7 @@
 #include <string>
 #include <time.h>
 
+
 //! Wrapper for global utility functions.
 namespace agora {
 	//! Names recognized feed languages.
@@ -20,7 +21,7 @@ namespace agora {
 	//! Parse (potentially complex) Atom `<title>` node to string.
 	std::string parseAtomTitle(const pugi::xml_node&);
 	//! Parse variably-formatted string to standard time.
-	time_t parseTime(std::string);
+	time_t parseTime(const std::string&);
 }
 
 #endif

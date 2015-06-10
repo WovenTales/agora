@@ -1,6 +1,6 @@
 // Contained in namespace Logger
 
-//! Log a message to the logfile
+//! Log a message to the logfile.
 /*! \p msgTemplate is passed into a std::ostringstream, and so this can handle any types that can.
  *
  *  Automatically prefixes date if message is printed at the beginning of the line.
@@ -31,9 +31,11 @@ static void log(T msgTemplate, Flush flush = FLUSH) {
 	}
 
 	logfile << msg.str();
-	logfile.terminated = false;
 
-	if (!(flush & CONTINUE)) {
+	if (flush & CONTINUE) {
+		logfile.flush();
+		logfile.terminated = false;
+	} else {
 		logfile << std::endl;
 		logfile.terminated = true;
 	}
