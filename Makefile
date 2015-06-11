@@ -1,4 +1,4 @@
-FILES = agora feed article database logger ncursesui
+FILES = agora feed article database logger ncursesui ncursesfeedlist
 
 SRCDIR = src
 INCDIR = $(SRCDIR)

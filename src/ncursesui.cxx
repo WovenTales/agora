@@ -10,6 +10,8 @@ NcursesUI::NcursesUI() {
 	initscr();
 	cbreak();
 	noecho();
+
+	getch();
 }
 
 NcursesUI::~NcursesUI() {

@@ -6,13 +6,6 @@
 
 
 int main(int argc, char *argv[]) {
-	Database db(argv[2]);
-	Feed f(argv[1]);
-	db.stage(f);
-	db.save();
-
-	Article *a = db.getArticle("http://what-if.xkcd.com/135/");
-	delete a;
 }
 
 
