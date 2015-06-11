@@ -11,9 +11,8 @@ int main(int argc, char *argv[]) {
 	db.stage(f);
 	db.save();
 
-	Article *a = db.getArticle("http://what-if.xkcd.com/135/");
-	a->print();
-	delete a;
+	Article a = db.getArticle("http://what-if.xkcd.com/135/");
+	a.print();
 }
 
 

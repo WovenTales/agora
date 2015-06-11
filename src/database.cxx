@@ -58,26 +58,61 @@ Database::~Database() {
 /*! If database doesn't contain given ID, returns an Article with default values
  *  (mostly empty strings) for all members.
  *
- *  The returned article should be freed with \c delete when done.
- *
  *  \param id article ID
- *  \return Pointer to a new Article with values according to given ID
+ *  \return An Article with values according to given ID
  */
-Article *Database::getArticle(const std::string &id) {
+Article Database::getArticle(const std::string &id) {
 	Logger::log("Requesting article with id '" + id + "'...", Logger::CONTINUE);
 
-	Article *out = NULL;
 	string cmd("SELECT * FROM articles WHERE aID = '" + replaceAll(id, "'", "''") + "';");
-	sqlite3_exec(db, cmd.c_str(), (int (*)(void*, int, char**, char**))makeArticle, &out, NULL);
+	vector<ArticleData> *rows = exec(cmd, 0);
 
-	if (!out) {
+	int count = rows->size();
+	ArticleData data = (*rows)[0];
+	delete rows;
+
+	if (!count) {
 		Logger::log("No such article found");
-		out = new Article();
+		return Article();
 	} else {
 		Logger::log("Found");
+		return Article(makeArticle(data));
+	}
+}
+
+/*! \param data the ArticleData to parse
+ *  \return The resulting Article
+ */
+Article Database::makeArticle(const Database::ArticleData data) {
+	string id, feedID, title, author, content, link, summary;
+	time_t updated;
+
+	string curName, curVal;
+	ArticleData::const_iterator end = data.end();
+	for (ArticleData::const_iterator it = data.begin(); it != end; it++) {
+		curName = it->first;
+		curVal = it->second;
+
+		if (!curVal.empty() && !curName.compare("aID")) {  // curVal != "" && curName == "aID"
+			id = curVal;
+		} else if (!curVal.empty() && !curName.compare("fID")) {  // curVal != "" && curName == "fID"
+			feedID = curVal;
+		} else if (!curVal.empty() && !curName.compare("aTitle")) {  // curVal != "" && curName == "aTitle"
+			title = curVal;
+		} else if (!curVal.empty() && !curName.compare("aUpdated")) {  // curVal != "" && curName == "aUpdated"
+			updated = parseTime(curVal);
+		} else if (!curVal.empty() && !curName.compare("aLink")) {  // curVal != "" && curName == "aLink"
+			link = curVal;
+		} else if (!curVal.empty() && !curName.compare("aAuthor")) {  // curVal != "" && curName == "aAuthor"
+			author = curVal;
+		} else if (!curVal.empty() && !curName.compare("aSummary")) {  // curVal != "" && curName == "aSummary"
+			summary = curVal;
+		} else if (!curVal.empty() && !curName.compare("aContent")) {  // curVal != "" && curName == "aContent"
+			content = curVal;
+		}
 	}
 
-	return out;
+	return Article(id, feedID, title, link, updated, author, content, summary);
 }
 
 
@@ -90,9 +125,9 @@ void Database::stage(const Article &a) {
 
 	articleStage.push(p);
 }
+
 /*! \param f the feed to stage
  */
-
 void Database::stage(const Feed &f) {
 	// Create a new instance so user doesn't have to worry about scope
 	Feed *p = new Feed(f);
@@ -231,46 +266,41 @@ void Database::save() {
 }
 
 
+/*! \param cmd SQLite3 command to execute
+ */
+void Database::exec(const std::string &cmd) {
+	sqlite3_exec(db, cmd.c_str(), NULL, NULL, NULL);
+}
+/*! The user is expected to \c delete the returned \c vector when done.
+ *
+ *  \param cmd SQLite3 command to execute
+ *  \param i   dummy parameter to differentiate from Database::exec(const std::string&)
+ *  \return List of ArticleData generated from \p cmd
+ */
+std::vector<Database::ArticleData> *Database::exec(const std::string &cmd, int i) {
+	vector<Database::ArticleData> *out = new vector<Database::ArticleData>;
+
+	sqlite3_exec(db, cmd.c_str(), (int (*)(void*, int, char**, char**))getEntries, out, NULL);
+
+	return out;
+}
+
+int Database::getEntries(std::vector<Database::ArticleData> *out, int cols, char *data[], char *colNames[]) {
+	Database::ArticleData m;
+
+	for (int i = 0; i < cols; i++) {
+		m[colNames[i]] = (data[i] ? replaceAll(data[i], "''", "'") : "");
+	}
+
+	out->push_back(m);
+	return 0;
+}
+
 int Database::isEmpty(bool *out, int cols, char *data[], char *colNames[]) {
 	if (cols == 0) {
 		*out = true;
 	} else {
 		*out = false;
 	}
-	return 0;
-}
-
-int Database::makeArticle(Article **a, int cols, char *vals[], char *names[]) {
-	//! \todo Delete old article at *a
-
-	string curName, curVal;
-	string id, feedID, title, author, content, link, summary;
-	time_t updated;
-
-	for (int i = 0; i < cols; i++) {
-		curName = names[i];
-		curVal = (vals[i] ? replaceAll(vals[i], "''", "'") : "");
-
-		if (!curVal.empty() && !curName.compare("aID")) {  // curVal != "" && curName == "aID"
-			id = curVal;
-		} else if (!curVal.empty() && !curName.compare("fID")) {  // curVal != "" && curName == "fID"
-			feedID = curVal;
-		} else if (!curVal.empty() && !curName.compare("aTitle")) {  // curVal != "" && curName == "aTitle"
-			title = curVal;
-		} else if (!curVal.empty() && !curName.compare("aUpdated")) {  // curVal != "" && curName == "aUpdated"
-			updated = parseTime(curVal);
-		} else if (!curVal.empty() && !curName.compare("aLink")) {  // curVal != "" && curName == "aLink"
-			link = curVal;
-		} else if (!curVal.empty() && !curName.compare("aAuthor")) {  // curVal != "" && curName == "aAuthor"
-			author = curVal;
-		} else if (!curVal.empty() && !curName.compare("aSummary")) {  // curVal != "" && curName == "aSummary"
-			summary = curVal;
-		} else if (!curVal.empty() && !curName.compare("aContent")) {  // curVal != "" && curName == "aContent"
-			content = curVal;
-		}
-	}
-
-	*a = new Article(id, feedID, title, link, updated, author, content, summary);
-
 	return 0;
 }
