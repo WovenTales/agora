@@ -1,4 +1,4 @@
-FILES = agora feed article database logger
+FILES = agora feed article database logger ncursesui
 
 SRCDIR = src
 INCDIR = $(SRCDIR)
@@ -7,7 +7,7 @@ BINDIR = bin
 DOCDIR = docs
 
 DEFINE = -DLOGFILE=\"agora.log\"
-INCLUDE = -I./$(INCDIR) -lpugixml -lsqlite3
+INCLUDE = -I./$(INCDIR) -lpugixml -lsqlite3 -lncurses
 COMPILE = -c
 FLAGS = $(DEFINE) $(INCLUDE)
 
@@ -47,6 +47,7 @@ $(OBJDIR)/article.o:  $(addprefix $(INCDIR)/,agora.hxx feed.hxx logger.hxx)
 $(OBJDIR)/database.o: $(addprefix $(INCDIR)/,agora.hxx article.hxx feed.hxx logger.hxx)
 $(OBJDIR)/feed.o:     $(addprefix $(INCDIR)/,agora.hxx logger.hxx)
 $(OBJDIR)/logger.o:   $(addprefix $(INCDIR)/,logger.tcc)
+#$(OBJDIR)/logger.o:   $(addprefix $(INCDIR)/,)
 
 $(OBJDIR)/%.o: $(SRCDIR)/%.cxx $(INCDIR)/%.hxx
 	g++ $(FLAGS) $(COMPILE) -o $(<:$(SRCDIR)%.cxx=$(OBJDIR)%.o) $<
