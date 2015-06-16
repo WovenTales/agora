@@ -13,45 +13,18 @@ using namespace pugi;
 using namespace std;
 
 
+Database::Database() : db(NULL) {
+	open(":memory:");
+}
+
 /*! \param filename the SQLite3 database to associate this Database with
  */
-Database::Database(const std::string &filename) {
-	Logger::log("Opening database '" + filename + "'...", Logger::CONTINUE);
-
-	if (sqlite3_open(filename.c_str(), &db) != SQLITE_OK) {
-		//! \todo More robust error handling
-		cout << "Bad database " << filename << endl;
-	}
-
-	Logger::log("Completed");
-
-	bool init = true;
-	sqlite3_exec(db, "PRAGMA table_info(feeds)", (int (*)(void*, int, char**, char**))isEmpty, &init, NULL);
-
-	if (init) {
-		// Initialize database
-		sqlite3_exec(db, "CREATE TABLE feeds (fID        NOT NULL PRIMARY KEY ON CONFLICT REPLACE,"
-		                                      "fTitle,"
-		                                      "fUpdated,"
-		                                      "fLink,"
-		                                      "fAuthor,"
-		                                      "fDesc);"
-				 "CREATE TABLE articles (aID       NOT NULL PRIMARY KEY ON CONFLICT REPLACE,"
-		                                        "fID,"
-		                                        "aTitle,"
-		                                        "aUpdated,"
-		                                        "aLink,"
-		                                        "aAuthor,"
-		                                        "aSummary,"
-		                                        "aContent);",
-		             NULL, NULL, NULL);
-		Logger::log("New database initialized");
-	}
+Database::Database(const std::string &filename) : db(NULL) {
+	open(filename);
 }
 
 Database::~Database() {
-	save();
-	sqlite3_close(db);
+	close();
 }
 
 
@@ -67,15 +40,14 @@ Article Database::getArticle(const std::string &id) {
 	string cmd("SELECT * FROM articles WHERE aID = '" + replaceAll(id, "'", "''") + "';");
 	vector<ArticleData> *rows = exec(cmd, 0);
 
-	int count = rows->size();
-	ArticleData data = (*rows)[0];
-	delete rows;
-
-	if (!count) {
+	if (!rows->size()) {  // rows.size() == 0
 		Logger::log("No such article found");
+		delete rows;
 		return Article();
 	} else {
 		Logger::log("Found");
+		ArticleData data = (*rows)[0];
+		delete rows;
 		return Article(makeArticle(data));
 	}
 }
@@ -115,6 +87,77 @@ Article Database::makeArticle(const Database::ArticleData data) {
 	return Article(id, feedID, title, link, updated, author, content, summary);
 }
 
+
+/*! If \c force set to true, avoids saving staged changes before closing database.
+ *
+ *  \param force whether to skip saving changes (default: save)
+ */
+void Database::close(bool force) {
+	Logger::log("Closing database");
+
+	if (force) {
+		clearStaged();
+	} else {
+		save();
+	}
+	sqlite3_close(db);
+
+	db = NULL;
+}
+
+
+/*! If this already has an active database, saves changes to that and closes it rather than overwriting.
+ *
+ *  \param filename the feed database to associate this Database with
+ */
+void Database::open(const std::string &filename) {
+	if (!db) {
+		close();
+	}
+
+	Logger::log("Opening database '" + filename + "'...", Logger::CONTINUE);
+
+	if (sqlite3_open(filename.c_str(), &db) != SQLITE_OK) {
+		//! \todo Better error handling
+		cerr << "Bad database file" << endl;
+	}
+
+	Logger::log("Completed");
+
+	bool init = true;
+	sqlite3_exec(db, "PRAGMA table_info(feeds)", (int (*)(void*, int, char**, char**))isEmpty, &init, NULL);
+
+	if (init) {
+		// Initialize database
+		sqlite3_exec(db, "CREATE TABLE feeds (fID        NOT NULL PRIMARY KEY ON CONFLICT REPLACE,"
+		                                      "fTitle,"
+		                                      "fUpdated,"
+		                                      "fLink,"
+		                                      "fAuthor,"
+		                                      "fDesc);"
+				 "CREATE TABLE articles (aID       NOT NULL PRIMARY KEY ON CONFLICT REPLACE,"
+		                                        "fID,"
+		                                        "aTitle,"
+		                                        "aUpdated,"
+		                                        "aLink,"
+		                                        "aAuthor,"
+		                                        "aSummary,"
+		                                        "aContent);",
+		             NULL, NULL, NULL);
+		Logger::log("New database initialized");
+	}
+}
+
+
+void Database::clearStaged() {
+	Logger::log("Clearing feeds...", Logger::CONTINUE);
+	clearStaged(feedStage);
+	Logger::log("Completed");
+
+	Logger::log("Clearing articles...", Logger::CONTINUE);
+	clearStaged(articleStage);
+	Logger::log("Completed");
+}
 
 /*! \param a the article to stage
  */

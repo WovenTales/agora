@@ -14,8 +14,6 @@ class Feed;
 //! An abstraction for a database on file.
 class Database {
   private:
-	Database();
-
 	sqlite3 *db;
 
 	std::queue<const Feed*> feedStage;
@@ -26,6 +24,8 @@ class Database {
 	static int isEmpty(bool*, int, char*[], char*[]);
 
   public:
+	//! Initialize without physical database.
+	Database();
 	//! Initialize to a particular file.
 	Database(const std::string &);
 	//! Standard deconstructor.
@@ -40,11 +40,18 @@ class Database {
 	//! Create Article from given data.
 	static Article makeArticle(const ArticleData);
 
+	//! Close database.
+	void close(bool = false);
+	//! Open specified database file.
+	void open(const std::string &);
+
 	//! Stage a Feed for writing.
 	void stage(const Feed &f);
 	//! Stage an Article for writing.
 	void stage(const Article &a);
 
+	//! Clear all staged changes without saving.
+	void clearStaged();
 	//! Commit the staged changes to the file.
 	void save();
 	/*! \class Database
@@ -56,6 +63,8 @@ class Database {
 	void                      exec(const std::string &s);
 	//! Execute a command on the database, returning resulting data.
 	std::vector<ArticleData> *exec(const std::string &s, int);
+
+#include <database.tcc>
 };
 
 #endif
