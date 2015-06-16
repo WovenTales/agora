@@ -3,9 +3,6 @@
 #include <curses.h>
 
 
-NcursesUI NcursesUI::singleton;
-
-
 NcursesUI::NcursesUI() {
 	initscr();
 	cbreak();

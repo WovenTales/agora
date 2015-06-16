@@ -1,7 +1,7 @@
 FILES = agora feed article database logger ncursesui ncursesfeedlist
 
 SRCDIR = src
-INCDIR = $(SRCDIR)
+INCDIR = include
 OBJDIR = obj
 BINDIR = bin
 DOCDIR = docs
@@ -33,6 +33,10 @@ clean:
 	-rmdir $(BINDIR) $(OBJDIR)
 clean-docs:
 	find docs/* ! -iname 'Doxyfile' -print0 | xargs -0 rm -rf
+
+.PHONY: run
+run:
+	bin/agora test.sqlite
 
 
 $(OBJDIR):

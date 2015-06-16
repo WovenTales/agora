@@ -1,11 +1,11 @@
 #include <agora.hxx>
 
-#include <article.hxx>
-#include <database.hxx>
-#include <feed.hxx>
+#include <ncursesui.hxx>
 
 
 int main(int argc, char *argv[]) {
+	NcursesUI *ui = new NcursesUI();
+	delete ui;
 }
 
 
