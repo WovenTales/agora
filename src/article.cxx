@@ -89,7 +89,7 @@ string Article::getFID() const {
 
 
 void Article::parseAtom(const xml_node &entry) {
-	Logger::log("Parsing article as Atom...", Logger::CONTINUE);
+	Log << "Parsing article as Atom...";
 
 	id = entry.child_value("id");
 	title = parseAtomTitle(entry.child("title"));
@@ -107,11 +107,11 @@ void Article::parseAtom(const xml_node &entry) {
 		link = id;
 	}
 
-	Logger::log("Completed parsing '" + title + "'");
+	Log << "Completed parsing '" << title << "'" << Log.ENDL;
 }
 
 void Article::parseRss(const xml_node &entry) {
-	Logger::log("Parsing article as RSS...", Logger::CONTINUE);
+	Log << "Parsing article as RSS...";
 
 	// pugixml safely gives empty string if node doesn't exist
 	id = entry.child_value("guid");
@@ -134,7 +134,7 @@ void Article::parseRss(const xml_node &entry) {
 		link = id;
 	}
 
-	Logger::log("Completed parsing '" + title + "'");
+	Log << "Completed parsing '" << title << "'";
 }
 
 

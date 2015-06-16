@@ -2,54 +2,72 @@
 #define LOGGER_H
 
 #include <fstream>
-#include <sstream>
+#include <iostream>
 #include <string>
 
-//! Singleton allowing logging of messages to a file.
+
+//! Utility class allowing simple logging to either file or standard output streams.
+/*! \warning Does not recognize std::endl. Use Logger::ENDL instead.
+ */
 class Logger {
   private:
-	// Force calls of constructor/destructor rather than never initializing
-	static Logger logger;
-
-	//! Wrapper for ofstream to insert extra blank line when closing file.
-	class ofspacingstream : public std::ofstream {
-	  private:
-		friend class Logger;
-
-		bool terminated;
-
-	  public:
-		ofspacingstream(const char* filename,
-		                ios_base::openmode mode = ios_base::out
-		               ) : std::ofstream(filename, mode) {
-			terminated = true; };
-		virtual ~ofspacingstream();
+	enum CommandBit {
+		// Use powers of two to allow bitwise OR
+		ENDL_BIT     = (1 << 0),
+		CONTINUE_BIT = (1 << 1),
+		FORCE_BIT    = (1 << 2),
+		ERROR_BIT    = (1 << 3)
 	};
-	static ofspacingstream logfile;
+	std::ofstream *logfile;
+
+	bool &error;
+	bool &terminated;
+
+	unsigned char &count;
+
+	std::ostream &stream();
+
+	Logger &operator--();
+	Logger &operator++() { ++count; };
 
   public:
-	//! Default constructor.
-	Logger();
+	//! Standard constructor.
+	Logger(std::string = "");
+	//! Copy constructor.
+	Logger(const Logger&);
+	//! Standard destructor.
+	virtual ~Logger();
 
-	//! Allowed options for line endings.
+	//! Control commands handling manner to stream to log.
 	/*! Can be combined with the standard OR operator `|`:
 	 *  \code
-	 *  Logger::CONTINUE | Logger::FORCE
+	 *  Logger::ERROR | Logger::CONTINUE
 	 *  \endcode
 	 */
-	enum Flush {
-		// Use powers of two to allow bitwise OR
-		//! Insert a line break after message.
-		FLUSH = 0,
+	enum Command {
 		//! Don't insert a line break, flowing into next call.
-		CONTINUE = 1,
+		CONTINUE = CONTINUE_BIT,
+		//! Print with error decorators, or to error stream.
+		ERROR    = ERROR_BIT | ENDL_BIT,
+		//! Insert a line break after message.
+		ENDL     = ENDL_BIT,
 		//! Force line break *before* the current mesage.
-		FORCE = 2
+		FORCE    = FORCE_BIT | ENDL_BIT
 	};
+
+	//! Standard assignment operator.
+	Logger &operator=(const Logger&);
+	//! Insertion operator handling control commands (Logger::Command).
+	Logger &operator<<(const Command&);
 
 #include <logger.tcc>
 };
+//! Global handle to default logfile.
+/*! Change destination by defining LOGFILE at compile; default of "" outputs to standard streams.
+ */
+extern Logger Log;
 
-Logger::Flush operator|(const Logger::Flush &a, const Logger::Flush &b);
+//! Standard bitwise OR.
+inline Logger::Command operator|(const Logger::Command &l, const Logger::Command &r) { return (Logger::Command)((int)l | (int)r); };
 
 #endif
