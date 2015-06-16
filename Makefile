@@ -2,6 +2,8 @@ FILES = agora article database feed logger ncursesui ncursesfeedlist
 
 LOGFILE = agora.log
 
+RUNCMD = $(BINDIR)/agora test.sqlite
+
 SRCDIR = src
 INCDIR = include
 OBJDIR = obj
@@ -36,9 +38,13 @@ clean:
 clean-docs:
 	find docs/* ! -iname 'Doxyfile' -print0 | xargs -0 rm -rf
 
-.PHONY: run
+.PHONY: run grind grind-all
 run:
-	bin/agora test.sqlite
+	$(RUNCMD)
+grind:
+	valgrind $(RUNCMD)
+grind-all:
+	valgrind --leak-check=full --show-leak-kinds=all $(RUNCMD)
 
 
 $(OBJDIR):

@@ -13,18 +13,40 @@ using namespace pugi;
 using namespace std;
 
 
-Database::Database() : db(NULL) {
+Database::Database() : db(NULL), count(*new unsigned char(1)) {
 	open(":memory:");
 }
 
 /*! \param filename the SQLite3 database to associate this Database with
  */
-Database::Database(const std::string &filename) : db(NULL) {
+Database::Database(const std::string &filename) : db(NULL), count(*new unsigned char(1)) {
 	open(filename);
 }
 
+/*! \param d the Database to copy
+ */
+Database::Database(const Database &d) : db(d.db), count(d.count) {
+	++(*this);
+}
+
 Database::~Database() {
-	close();
+	--(*this);
+}
+
+
+Database &Database::operator=(const Database &d) {
+	count = d.count;
+	db    = d.db;
+
+	++(*this);
+}
+
+Database &Database::operator--() {
+	if (--count == 0) {
+		close();
+
+		delete &count;
+	}
 }
 
 
