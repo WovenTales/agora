@@ -47,6 +47,7 @@ Article::Article(const pugi::xml_node &entry, const Feed &feed, const FeedLang &
 	} else if (lang == RSS) {
 		parseRss(entry);
 	} else {
+		//! \todo Better error handling
 		cerr << "Invalid language for parsing" << endl;
 	}
 }

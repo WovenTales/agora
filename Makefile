@@ -1,14 +1,15 @@
-FILES = agora feed article database logger
+FILES = agora article database feed logger
+
+LOGFILE = agora.log
 
 SRCDIR = src
-INCDIR = $(SRCDIR)
+INCDIR = include
 OBJDIR = obj
 BINDIR = bin
 DOCDIR = docs
 
-DEFINE = -DLOGFILE=\"agora.log\"
+DEFINE = -DLOGFILE=\"$(LOGFILE)\"
 INCLUDE = -I./$(INCDIR) -lpugixml -lsqlite3
-COMPILE = -c
 FLAGS = $(DEFINE) $(INCLUDE)
 
 SOURCES = $(FILES:%=$(SRCDIR)/%.cxx)
@@ -29,10 +30,14 @@ $(DOCDIR)/html: $(DOCDIR)/Doxyfile $(SOURCES) $(HEADERS)
 
 .PHONY: clean clean-docs
 clean:
-	rm -f $(OBJECTS) $(BINDIR)/agora
+	-rm -f $(OBJECTS) $(LOGFILE) $(BINDIR)/agora
 	-rmdir $(BINDIR) $(OBJDIR)
 clean-docs:
 	find docs/* ! -iname 'Doxyfile' -print0 | xargs -0 rm -rf
+
+.PHONY: run
+run:
+	bin/agora whatif.atom test.sqlite
 
 
 $(OBJDIR):
@@ -49,4 +54,4 @@ $(OBJDIR)/feed.o:     $(addprefix $(INCDIR)/,agora.hxx logger.hxx)
 $(OBJDIR)/logger.o:   $(addprefix $(INCDIR)/,logger.tcc)
 
 $(OBJDIR)/%.o: $(SRCDIR)/%.cxx $(INCDIR)/%.hxx
-	g++ $(FLAGS) $(COMPILE) -o $(<:$(SRCDIR)%.cxx=$(OBJDIR)%.o) $<
+	g++ $(FLAGS) -c -o $(<:$(SRCDIR)%.cxx=$(OBJDIR)%.o) $<
