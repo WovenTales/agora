@@ -49,7 +49,6 @@ void NcursesUI::init(const std::string &filename) {
 	keypad(stdscr, TRUE);
 
 	feedlist = new NcursesFeedList(filename);
-
 	refresh();
 
 	getch();

@@ -33,7 +33,7 @@ $(DOCDIR)/html: $(DOCDIR)/Doxyfile $(SOURCES) $(HEADERS)
 
 .PHONY: clean clean-docs
 clean:
-	-rm -f $(OBJECTS) $(DEPENDS) $(LOGFILE) $(BINDIR)/agora
+	-rm -f $(OBJDIR)/* $(LOGFILE) $(BINDIR)/agora
 	-rmdir $(BINDIR) $(OBJDIR)
 clean-docs:
 	find docs/* ! -iname 'Doxyfile' -print0 | xargs -0 rm -rf

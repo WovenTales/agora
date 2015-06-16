@@ -14,29 +14,31 @@ NcursesFeedList::NcursesFeedList() {
 }
 
 NcursesFeedList::NcursesFeedList(const std::string &filename, int lines, int cols, int x, int y) {
-	resize(lines, cols, x, y);
-	init(filename);
+	Log << "Initializing feed list with '" << filename << "'" << Log.ENDL;
+	refresh();
+
+	init(lines, cols, x, y);
+
+	box(list, 0, 0);
+	waddstr(list, filename.c_str());
+
+	wrefresh(list);
 }
 
 NcursesFeedList::~NcursesFeedList() {
 	Log << "Closing feed list" << Log.ENDL;
 
 	if (list) {
+		// Potentially unnecessary, but doesn't hurt to include
+		wborder(list, ' ', ' ', ' ',' ',' ',' ',' ',' ');
+		wrefresh(list);
+
 		delwin(list);
 	}
 }
 
 
-void NcursesFeedList::init(const std::string &filename) {
-	Log << "Initializing feed list with '" << filename << "'" << Log.ENDL;
-
-	waddstr(list, filename.c_str());
-
-	wrefresh(list);
-}
-
-
-void NcursesFeedList::resize(int lines, int cols, int x, int y) {
+void NcursesFeedList::init(int lines, int cols, int x, int y) {
 	Log << "Resetting feed list to " << lines << ", " << cols << ", " << x << ", " << y << Log.ENDL;
 
 	int maxX, maxY;
@@ -60,5 +62,4 @@ void NcursesFeedList::resize(int lines, int cols, int x, int y) {
 	}
 
 	list = newwin(lines, cols, x, y);
-	box(list, 0, 0);
 }
