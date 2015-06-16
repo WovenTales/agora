@@ -4,8 +4,7 @@
 
 
 int main(int argc, char *argv[]) {
-	NcursesUI *ui = new NcursesUI();
-	delete ui;
+	NcursesUI ui(argv[1]);
 }
 
 

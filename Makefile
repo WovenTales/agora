@@ -46,12 +46,13 @@ $(BINDIR):
 
 #TODO: Figure out how to separate .o and .hxx dependencies for proper cascading rebuilding
 #        (eg. editing logger.tcc should rebuild everything, but would only rebuild logger.o)
-$(OBJDIR)/agora.o:    $(addprefix $(INCDIR)/,article.hxx database.hxx feed.hxx)
-$(OBJDIR)/article.o:  $(addprefix $(INCDIR)/,agora.hxx feed.hxx logger.hxx)
-$(OBJDIR)/database.o: $(addprefix $(INCDIR)/,agora.hxx article.hxx feed.hxx logger.hxx)
-$(OBJDIR)/feed.o:     $(addprefix $(INCDIR)/,agora.hxx logger.hxx)
-$(OBJDIR)/logger.o:   $(addprefix $(INCDIR)/,logger.tcc)
-#$(OBJDIR)/logger.o:   $(addprefix $(INCDIR)/,)
+$(OBJDIR)/agora.o:           $(addprefix $(INCDIR)/,article.hxx database.hxx feed.hxx ncursesui.hxx)
+$(OBJDIR)/article.o:         $(addprefix $(INCDIR)/,agora.hxx feed.hxx logger.hxx)
+$(OBJDIR)/database.o:        $(addprefix $(INCDIR)/,agora.hxx article.hxx feed.hxx logger.hxx)
+$(OBJDIR)/feed.o:            $(addprefix $(INCDIR)/,agora.hxx logger.hxx)
+$(OBJDIR)/logger.o:          $(addprefix $(INCDIR)/,logger.tcc)
+#$(OBJDIR)/ncursesfeedlist.o: $(addprefix $(INCDIR)/,)
+$(OBJDIR)/ncursesui.o:       $(addprefix $(INCDIR)/,ncursesfeedlist.hxx)
 
 $(OBJDIR)/%.o: $(SRCDIR)/%.cxx $(INCDIR)/%.hxx
 	g++ $(FLAGS) $(COMPILE) -o $(<:$(SRCDIR)%.cxx=$(OBJDIR)%.o) $<
