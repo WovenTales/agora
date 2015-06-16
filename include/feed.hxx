@@ -7,8 +7,6 @@
 #include <string>
 #include <time.h>
 
-using namespace std;
-
 
 //! An abstraction for a web news feed.
 class Feed {
@@ -22,15 +20,15 @@ class Feed {
 	agora::FeedLang lang;
 
 	// Expected members
-	string id;
-	string title;
+	std::string id;
+	std::string title;
 	// Only has limited utility (we've already downloaded the file)
 	time_t updated;
 
 	// Optional members
-	string author;
-	string link;
-	string description;
+	std::string author;
+	std::string link;
+	std::string description;
 
 	/*! \class Feed
 	 *  \todo Add:

@@ -12,6 +12,8 @@ class Feed;
 //! A particular entry from some feed.
 class Article {
   private:
+	Article &operator=(const Article&);
+
 	// Expected members
 	std::string id;
 	const Feed &parent;

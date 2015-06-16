@@ -13,17 +13,116 @@ using namespace pugi;
 using namespace std;
 
 
+Database::Database() : db(NULL) {
+	open(":memory:");
+}
+
 /*! \param filename the SQLite3 database to associate this Database with
  */
-Database::Database(const std::string &filename) {
-	Logger::log("Opening database '" + filename + "'...", Logger::CONTINUE);
+Database::Database(const std::string &filename) : db(NULL) {
+	open(filename);
+}
 
-	if (sqlite3_open(filename.c_str(), &db) != SQLITE_OK) {
-		//! \todo More robust error handling
-		cout << "Bad database " << filename << endl;
+Database::~Database() {
+	close();
+}
+
+
+/*! If database doesn't contain given ID, returns an Article with default values
+ *  (mostly empty strings) for all members.
+ *
+ *  \param id article ID
+ *  \return An Article with values according to given ID
+ */
+Article Database::getArticle(const std::string &id) {
+	Log << "Requesting article with id '" << id << "'...";
+
+	string cmd("SELECT * FROM articles WHERE aID = '" + replaceAll(id, "'", "''") + "';");
+	vector<ArticleData> *rows = exec(cmd, 0);
+
+	if (!rows->size()) {  // rows.size() == 0
+		Log << "No such article found" << Log.ENDL;
+		delete rows;
+		return Article();
+	} else {
+		Log << "Found" << Log.ENDL;
+		ArticleData data = (*rows)[0];
+		delete rows;
+		return Article(makeArticle(data));
+	}
+}
+
+/*! \param data the ArticleData to parse
+ *  \return The resulting Article
+ */
+Article Database::makeArticle(const Database::ArticleData data) {
+	string id, feedID, title, author, content, link, summary;
+	time_t updated;
+
+	string curName, curVal;
+	ArticleData::const_iterator end = data.end();
+	for (ArticleData::const_iterator it = data.begin(); it != end; it++) {
+		curName = it->first;
+		curVal = it->second;
+
+		if (!curVal.empty() && !curName.compare("aID")) {  // curVal != "" && curName == "aID"
+			id = curVal;
+		} else if (!curVal.empty() && !curName.compare("fID")) {  // curVal != "" && curName == "fID"
+			feedID = curVal;
+		} else if (!curVal.empty() && !curName.compare("aTitle")) {  // curVal != "" && curName == "aTitle"
+			title = curVal;
+		} else if (!curVal.empty() && !curName.compare("aUpdated")) {  // curVal != "" && curName == "aUpdated"
+			updated = parseTime(curVal);
+		} else if (!curVal.empty() && !curName.compare("aLink")) {  // curVal != "" && curName == "aLink"
+			link = curVal;
+		} else if (!curVal.empty() && !curName.compare("aAuthor")) {  // curVal != "" && curName == "aAuthor"
+			author = curVal;
+		} else if (!curVal.empty() && !curName.compare("aSummary")) {  // curVal != "" && curName == "aSummary"
+			summary = curVal;
+		} else if (!curVal.empty() && !curName.compare("aContent")) {  // curVal != "" && curName == "aContent"
+			content = curVal;
+		}
 	}
 
-	Logger::log("Completed");
+	return Article(id, feedID, title, link, updated, author, content, summary);
+}
+
+
+/*! If \c force set to true, avoids saving staged changes before closing database.
+ *
+ *  \param force whether to skip saving changes (default: save)
+ */
+void Database::close(bool force) {
+	Log << "Closing database" << Log.ENDL;
+
+	if (force) {
+		clearStaged();
+	} else {
+		save();
+	}
+	sqlite3_close(db);
+
+	db = NULL;
+}
+
+
+/*! If this already has an active database, saves changes to that and closes it rather than overwriting.
+ *
+ *  \param filename the feed database to associate this Database with
+ */
+void Database::open(const std::string &filename) {
+	if (!db) {
+		close();
+	}
+
+	Log << "Opening database '" << filename << "'...";
+
+	if (sqlite3_open(filename.c_str(), &db) != SQLITE_OK) {
+		//! \todo Better error handling
+		cerr << "Bad database file" << endl;
+	}
+
+	Log << "Completed" << Log.ENDL;
 
 	bool init = true;
 	sqlite3_exec(db, "PRAGMA table_info(feeds)", (int (*)(void*, int, char**, char**))isEmpty, &init, NULL);
@@ -45,58 +144,37 @@ Database::Database(const std::string &filename) {
 		                                        "aSummary,"
 		                                        "aContent);",
 		             NULL, NULL, NULL);
-		Logger::log("New database initialized");
+		Log << "New database initialized" << Log.ENDL;
 	}
 }
 
-Database::~Database() {
-	save();
-	sqlite3_close(db);
+
+void Database::clearStaged() {
+	Log << "Clearing feeds...";
+	clearStaged(feedStage);
+	Log << "Completed" << Log.ENDL;
+
+	Log << "Clearing articles...";
+	clearStaged(articleStage);
+	Log << "Completed" << Log.ENDL;
 }
-
-
-/*! If database doesn't contain given ID, returns an Article with default values
- *  (mostly empty strings) for all members.
- *
- *  The returned article should be freed with \c delete when done.
- *
- *  \param id article ID
- *  \return Pointer to a new Article with values according to given ID
- */
-Article *Database::getArticle(const std::string &id) {
-	Logger::log("Requesting article with id '" + id + "'...", Logger::CONTINUE);
-
-	Article *out = NULL;
-	string cmd("SELECT * FROM articles WHERE aID = '" + replaceAll(id, "'", "''") + "';");
-	sqlite3_exec(db, cmd.c_str(), (int (*)(void*, int, char**, char**))makeArticle, &out, NULL);
-
-	if (!out) {
-		Logger::log("No such article found");
-		out = new Article();
-	} else {
-		Logger::log("Found");
-	}
-
-	return out;
-}
-
 
 /*! \param a the article to stage
  */
 void Database::stage(const Article &a) {
 	// Create a new instance so user doesn't have to worry about scope
 	Article *p = new Article(a);
-	Logger::log("Staging article '" + p->getTitle() + "'");
+	Log << "Staging article '" << p->getTitle() << "'" << Log.ENDL;
 
 	articleStage.push(p);
 }
+
 /*! \param f the feed to stage
  */
-
 void Database::stage(const Feed &f) {
 	// Create a new instance so user doesn't have to worry about scope
 	Feed *p = new Feed(f);
-	Logger::log("Staging feed '" + p->getTitle() + "'");
+	Log << "Staging feed '" << p->getTitle() << "'" << Log.ENDL;
 
 	feedStage.push(p);
 
@@ -113,14 +191,12 @@ void Database::stage(const Feed &f) {
 		count++;
 	}
 
-	Logger::log("Staged ", Logger::CONTINUE);
-	Logger::log(count, Logger::CONTINUE);
-	Logger::log(" articles from feed");
+	Log << "Staged " << count << " articles from feed" << Log.ENDL;
 }
 
 
 void Database::save() {
-	Logger::log("Committing staged elements");
+	Log << "Committing staged elements" << Log.ENDL;
 
 	unsigned int countF = 0, countA = 0;
 	string insert("");
@@ -140,7 +216,7 @@ void Database::save() {
 		string summary = replaceAll(a->getSummary(), "'", "''");
 		string content = replaceAll(a->getContent(), "'", "''");
 
-		Logger::log("Generating command for article '" + title + "'...", Logger::CONTINUE);
+		Log << "Generating command for article '" << title << "'...";
 
 		cols = "aID, fID";
 		vals = "'" + id + "','" + feedID + "'";
@@ -174,7 +250,7 @@ void Database::save() {
 		delete a;
 		countA++;
 
-		Logger::log("Completed");
+		Log << "Completed" << Log.ENDL;
 	}
 
 	const Feed *f;
@@ -188,7 +264,7 @@ void Database::save() {
 		string author      = replaceAll(f->getAuthor(), "'", "''");
 		string description = replaceAll(f->getDescription(), "'", "''");
 
-		Logger::log("Generating command for feed '" + title + "'...", Logger::CONTINUE);
+		Log << "Generating command for feed '" << title << "'...";
 
 		cols = "fID";
 		vals = "'" + id + "'";
@@ -218,18 +294,44 @@ void Database::save() {
 		}
 		countF++;
 
-		Logger::log("Completed");
+		Log << "Completed" << Log.ENDL;
 	}
 
 	exec(insert);
 
-	Logger::log("Saved ", Logger::CONTINUE);
-	Logger::log(countA, Logger::CONTINUE);
-	Logger::log(" articles and ", Logger::CONTINUE);
-	Logger::log(countF, Logger::CONTINUE);
-	Logger::log(" feeds from stage");
+	Log << "Saved " << countA << " articles and " << countF << " feeds from stage" << Log.ENDL;
 }
 
+
+/*! \param cmd SQLite3 command to execute
+ */
+void Database::exec(const std::string &cmd) {
+	sqlite3_exec(db, cmd.c_str(), NULL, NULL, NULL);
+}
+/*! The user is expected to \c delete the returned \c vector when done.
+ *
+ *  \param cmd SQLite3 command to execute
+ *  \param i   dummy parameter to differentiate from Database::exec(const std::string&)
+ *  \return List of ArticleData generated from \p cmd
+ */
+std::vector<Database::ArticleData> *Database::exec(const std::string &cmd, int i) {
+	vector<Database::ArticleData> *out = new vector<Database::ArticleData>;
+
+	sqlite3_exec(db, cmd.c_str(), (int (*)(void*, int, char**, char**))getEntries, out, NULL);
+
+	return out;
+}
+
+int Database::getEntries(std::vector<Database::ArticleData> *out, int cols, char *data[], char *colNames[]) {
+	Database::ArticleData m;
+
+	for (int i = 0; i < cols; i++) {
+		m[colNames[i]] = (data[i] ? replaceAll(data[i], "''", "'") : "");
+	}
+
+	out->push_back(m);
+	return 0;
+}
 
 int Database::isEmpty(bool *out, int cols, char *data[], char *colNames[]) {
 	if (cols == 0) {
@@ -237,40 +339,5 @@ int Database::isEmpty(bool *out, int cols, char *data[], char *colNames[]) {
 	} else {
 		*out = false;
 	}
-	return 0;
-}
-
-int Database::makeArticle(Article **a, int cols, char *vals[], char *names[]) {
-	//! \todo Delete old article at *a
-
-	string curName, curVal;
-	string id, feedID, title, author, content, link, summary;
-	time_t updated;
-
-	for (int i = 0; i < cols; i++) {
-		curName = names[i];
-		curVal = (vals[i] ? replaceAll(vals[i], "''", "'") : "");
-
-		if (!curVal.empty() && !curName.compare("aID")) {  // curVal != "" && curName == "aID"
-			id = curVal;
-		} else if (!curVal.empty() && !curName.compare("fID")) {  // curVal != "" && curName == "fID"
-			feedID = curVal;
-		} else if (!curVal.empty() && !curName.compare("aTitle")) {  // curVal != "" && curName == "aTitle"
-			title = curVal;
-		} else if (!curVal.empty() && !curName.compare("aUpdated")) {  // curVal != "" && curName == "aUpdated"
-			updated = parseTime(curVal);
-		} else if (!curVal.empty() && !curName.compare("aLink")) {  // curVal != "" && curName == "aLink"
-			link = curVal;
-		} else if (!curVal.empty() && !curName.compare("aAuthor")) {  // curVal != "" && curName == "aAuthor"
-			author = curVal;
-		} else if (!curVal.empty() && !curName.compare("aSummary")) {  // curVal != "" && curName == "aSummary"
-			summary = curVal;
-		} else if (!curVal.empty() && !curName.compare("aContent")) {  // curVal != "" && curName == "aContent"
-			content = curVal;
-		}
-	}
-
-	*a = new Article(id, feedID, title, link, updated, author, content, summary);
-
 	return 0;
 }

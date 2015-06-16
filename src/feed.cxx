@@ -128,7 +128,7 @@ xml_node Feed::getRoot() const {
 
 
 void Feed::parseAtom(const xml_node &feed) {
-	Logger::log("Parsing feed as Atom...", Logger::CONTINUE);
+	Log << "Parsing feed as Atom...";
 
 	lang = ATOM;
 
@@ -146,12 +146,12 @@ void Feed::parseAtom(const xml_node &feed) {
 		link = id;
 	}
 
-	Logger::log("Completed parsing '" + title + "'");
+	Log << "Completed parsing '" << title << "'" << Log.ENDL;
 }
 
 void Feed::parseRss(const xml_node &feed) {
 	//! \todo Specifically, RSS 2.0; include support for older standards
-	Logger::log("Parsing feed as RSS...", Logger::CONTINUE);
+	Log << "Parsing feed as RSS...";
 
 	lang = RSS;
 
@@ -165,7 +165,7 @@ void Feed::parseRss(const xml_node &feed) {
 		//! \todo Generate unique id
 	}
 
-	Logger::log("Completed parsing '" + title + "'");
+	Log << "Completed parsing '" << title << "'" << Log.ENDL;
 }
 
 
