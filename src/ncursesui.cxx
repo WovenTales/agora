@@ -26,7 +26,7 @@ NcursesUI::~NcursesUI() {
 
 
 void NcursesUI::close() {
-	Logger::log("Closing UI");
+	Log << "Closing UI" << Log.ENDL;
 
 	if (feedlist) {
 		delete feedlist;
@@ -38,8 +38,7 @@ void NcursesUI::close() {
 }
 
 void NcursesUI::init(const std::string &filename) {
-	Logger::log("Initializing UI with database ", Logger::CONTINUE);
-	Logger::log(filename);
+	Log << "Initializing UI with database '" << filename << "'" << Log.ENDL;
 
 	base.close();
 
@@ -57,7 +56,7 @@ void NcursesUI::init(const std::string &filename) {
 }
 
 void NcursesUI::null() {
-	Logger::log("Initializing blank UI");
+	Log << "Initializing blank UI" << Log.ENDL;
 
 	feedlist = NULL;
 }

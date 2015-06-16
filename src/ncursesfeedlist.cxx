@@ -8,7 +8,7 @@ using namespace std;
 
 
 NcursesFeedList::NcursesFeedList() {
-	Logger::log("Initializing blank feed list");
+	Log << "Initializing blank feed list" << Log.ENDL;
 
 	list = NULL;
 }
@@ -19,7 +19,7 @@ NcursesFeedList::NcursesFeedList(const std::string &filename, int lines, int col
 }
 
 NcursesFeedList::~NcursesFeedList() {
-	Logger::log("Closing feed list");
+	Log << "Closing feed list" << Log.ENDL;
 
 	if (list) {
 		delwin(list);
@@ -28,9 +28,7 @@ NcursesFeedList::~NcursesFeedList() {
 
 
 void NcursesFeedList::init(const std::string &filename) {
-	Logger::log("Initializing feed list with '", Logger::CONTINUE);
-	Logger::log(filename, Logger::CONTINUE);
-	Logger::log("'");
+	Log << "Initializing feed list with '" << filename << "'" << Log.ENDL;
 
 	waddstr(list, filename.c_str());
 
@@ -39,14 +37,7 @@ void NcursesFeedList::init(const std::string &filename) {
 
 
 void NcursesFeedList::resize(int lines, int cols, int x, int y) {
-	Logger::log("Resetting feed list to ", Logger::CONTINUE);
-	Logger::log(lines, Logger::CONTINUE);
-	Logger::log(", ", Logger::CONTINUE);
-	Logger::log(cols, Logger::CONTINUE);
-	Logger::log(", ", Logger::CONTINUE);
-	Logger::log(x, Logger::CONTINUE);
-	Logger::log(", ", Logger::CONTINUE);
-	Logger::log(y);
+	Log << "Resetting feed list to " << lines << ", " << cols << ", " << x << ", " << y << Log.ENDL;
 
 	int maxX, maxY;
 	getmaxyx(stdscr, maxY, maxX);
