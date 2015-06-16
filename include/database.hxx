@@ -19,6 +19,14 @@ class Database {
 	std::queue<const Feed*> feedStage;
 	std::queue<const Article*> articleStage;
 
+	unsigned char &count;
+
+	Database &operator--();
+	Database &operator++() { ++count; };
+
+	//! Close database.
+	void close(bool = false);
+
 	// For use in sqlite3_exec() calls
 	static int getEntries(std::vector<std::map<std::string, std::string> >*, int, char*[], char*[]);
 	static int isEmpty(bool*, int, char*[], char*[]);
@@ -28,8 +36,13 @@ class Database {
 	Database();
 	//! Initialize to a particular file.
 	Database(const std::string &);
+	//! Copy constructor.
+	Database(const Database&);
 	//! Standard deconstructor.
 	virtual ~Database();
+
+	//! Standard assignment operator.
+	Database &operator=(const Database&);
 
 	//! Mappings of (columnName) -> (data), representing a lower-level representation of an Article.
 	//! \todo Make enum or similar out of column names, so don't have to worry about exact implementation
@@ -40,8 +53,6 @@ class Database {
 	//! Create Article from given data.
 	static Article makeArticle(const ArticleData);
 
-	//! Close database.
-	void close(bool = false);
 	//! Open specified database file.
 	void open(const std::string &);
 

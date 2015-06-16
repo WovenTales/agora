@@ -2,6 +2,8 @@ FILES = agora article database feed logger
 
 LOGFILE = agora.log
 
+RUNCMD = $(BINDIR)/agora whatif.atom test.sqlite
+
 SRCDIR = src
 INCDIR = include
 OBJDIR = obj
@@ -31,14 +33,18 @@ $(DOCDIR)/html: $(DOCDIR)/Doxyfile $(SOURCES) $(HEADERS)
 
 .PHONY: clean clean-docs
 clean:
-	-rm -f $(OBJECTS) $(DEPENDS) $(LOGFILE) $(BINDIR)/agora
+	-rm -f $(OBJDIR)/* $(LOGFILE) $(BINDIR)/agora
 	-rmdir $(BINDIR) $(OBJDIR)
 clean-docs:
 	find docs/* ! -iname 'Doxyfile' -print0 | xargs -0 rm -rf
 
-.PHONY: run
+.PHONY: run grind grind-all
 run:
-	bin/agora whatif.atom test.sqlite
+	$(RUNCMD)
+grind:
+	valgrind $(RUNCMD)
+grind-all:
+	valgrind --leak-check=full --show-leak-kinds=all $(RUNCMD)
 
 
 $(OBJDIR):
