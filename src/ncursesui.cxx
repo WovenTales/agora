@@ -7,17 +7,34 @@
 using namespace std;
 
 
-NcursesUI NcursesUI::base;
+NcursesUI        NcursesUI::base(0);
+unsigned char    NcursesUI::count(1);
 
-NcursesFeedList *NcursesUI::feedlist = new NcursesFeedList;
+Database        *NcursesUI::db = NULL;
+NcursesFeedList *NcursesUI::feedlist = NULL;
 
-
-NcursesUI::NcursesUI() {
-	null();
-}
 
 NcursesUI::NcursesUI(const std::string &filename) {
-	init(filename);
+	Log << "Initializing UI with database '" << filename << "'" << Log.ENDL;
+
+	if (feedlist) {
+		Log << "Previous UI found...";
+		close();
+	}
+
+	db = new Database(filename);
+	++count;
+
+	initscr();
+
+	cbreak();
+	noecho();
+	keypad(stdscr, TRUE);
+
+	feedlist = new NcursesFeedList(db);
+	refresh();
+
+	getch();
 }
 
 NcursesUI::~NcursesUI() {
@@ -26,36 +43,14 @@ NcursesUI::~NcursesUI() {
 
 
 void NcursesUI::close() {
-	Log << "Closing UI" << Log.ENDL;
+	if (--count == 0) {
+		Log << "Closing UI" << Log.ENDL;
 
-	if (feedlist) {
-		delete feedlist;
+		if (feedlist) {
+			delete feedlist;
+			feedlist = NULL;
+		}
 
-		null();
+		endwin();
 	}
-
-	endwin();
-}
-
-void NcursesUI::init(const std::string &filename) {
-	Log << "Initializing UI with database '" << filename << "'" << Log.ENDL;
-
-	base.close();
-
-	initscr();
-
-	cbreak();
-	noecho();
-	keypad(stdscr, TRUE);
-
-	feedlist = new NcursesFeedList(filename);
-	refresh();
-
-	getch();
-}
-
-void NcursesUI::null() {
-	Log << "Initializing blank UI" << Log.ENDL;
-
-	feedlist = NULL;
 }

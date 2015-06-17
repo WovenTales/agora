@@ -1,5 +1,7 @@
 #include <agora.hxx>
 
+#include <database.hxx>
+#include <feed.hxx>
 #include <ncursesui.hxx>
 
 

@@ -22,7 +22,6 @@ class Database {
 	unsigned char &count;
 
 	Database &operator--();
-	Database &operator++() { ++count; };
 
 	//! Close database.
 	void close(bool = false);
@@ -46,20 +45,23 @@ class Database {
 
 	//! Mappings of (columnName) -> (data), representing a lower-level representation of an Article.
 	//! \todo Make enum or similar out of column names, so don't have to worry about exact implementation
-	typedef typename std::map<std::string, std::string> ArticleData;
+	typedef typename std::map<std::string, std::string> Data;
+
+	//! Get title assigned to database.
+	std::string getTitle();
 
 	//! Request an Article by ID.
-	Article getArticle(const std::string&);
+	Article        getArticle(const std::string&);
 	//! Create Article from given data.
-	static Article makeArticle(const ArticleData);
+	static Article makeArticle(const Data);
 
 	//! Open specified database file.
-	void open(const std::string &);
+	void open(const std::string&);
 
 	//! Stage a Feed for writing.
-	void stage(const Feed &f);
+	void stage(const Feed&);
 	//! Stage an Article for writing.
-	void stage(const Article &a);
+	void stage(const Article&);
 
 	//! Clear all staged changes without saving.
 	void clearStaged();
@@ -71,10 +73,11 @@ class Database {
 	 */
 
 	//! Execute a command on the database.
-	void                      exec(const std::string &s);
+	void                      exec(const std::string&);
 	//! Execute a command on the database, returning resulting data.
-	std::vector<ArticleData> *exec(const std::string &s, int);
+	std::vector<Data> *exec(const std::string&, int);
 
+// private: void clearStaged(std::queue<T*>&);
 #include <database.tcc>
 };
 

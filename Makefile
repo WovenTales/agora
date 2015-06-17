@@ -38,11 +38,13 @@ clean:
 clean-docs:
 	find docs/* ! -iname 'Doxyfile' -print0 | xargs -0 rm -rf
 
-.PHONY: run grind grind-all
+.PHONY: run grind grind-full grind-all
 run:
 	$(RUNCMD)
 grind:
 	valgrind $(RUNCMD)
+grind-full:
+	valgrind --leak-check=full $(RUNCMD)
 grind-all:
 	valgrind --leak-check=full --show-leak-kinds=all $(RUNCMD)
 

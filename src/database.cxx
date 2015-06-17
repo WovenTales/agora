@@ -26,7 +26,7 @@ Database::Database(const std::string &filename) : db(NULL), count(*new unsigned 
 /*! \param d the Database to copy
  */
 Database::Database(const Database &d) : db(d.db), count(d.count) {
-	++(*this);
+	++count;
 }
 
 Database::~Database() {
@@ -38,7 +38,7 @@ Database &Database::operator=(const Database &d) {
 	count = d.count;
 	db    = d.db;
 
-	++(*this);
+	++count;
 }
 
 Database &Database::operator--() {
@@ -50,6 +50,18 @@ Database &Database::operator--() {
 }
 
 
+std::string Database::getTitle() {
+	vector<Data> *rows = exec("SELECT title FROM meta", 0);
+	string out = "";
+
+	if (rows->size()) {
+		out = replaceAll((*rows)[0]["title"], "''", "'");
+	}
+
+	delete rows;
+	return out;
+}
+
 /*! If database doesn't contain given ID, returns an Article with default values
  *  (mostly empty strings) for all members.
  *
@@ -60,7 +72,7 @@ Article Database::getArticle(const std::string &id) {
 	Log << "Requesting article with id '" << id << "'...";
 
 	string cmd("SELECT * FROM articles WHERE aID = '" + replaceAll(id, "'", "''") + "';");
-	vector<ArticleData> *rows = exec(cmd, 0);
+	vector<Data> *rows = exec(cmd, 0);
 
 	if (!rows->size()) {  // rows.size() == 0
 		Log << "No such article found" << Log.ENDL;
@@ -68,22 +80,22 @@ Article Database::getArticle(const std::string &id) {
 		return Article();
 	} else {
 		Log << "Found" << Log.ENDL;
-		ArticleData data = (*rows)[0];
+		Data data = (*rows)[0];
 		delete rows;
 		return Article(makeArticle(data));
 	}
 }
 
-/*! \param data the ArticleData to parse
+/*! \param data the Data to parse
  *  \return The resulting Article
  */
-Article Database::makeArticle(const Database::ArticleData data) {
+Article Database::makeArticle(const Database::Data data) {
 	string id, feedID, title, author, content, link, summary;
 	time_t updated;
 
 	string curName, curVal;
-	ArticleData::const_iterator end = data.end();
-	for (ArticleData::const_iterator it = data.begin(); it != end; it++) {
+	Data::const_iterator end = data.end();
+	for (Data::const_iterator it = data.begin(); it != end; it++) {
 		curName = it->first;
 		curVal = it->second;
 
@@ -150,22 +162,24 @@ void Database::open(const std::string &filename) {
 	sqlite3_exec(db, "PRAGMA table_info(feeds)", (int (*)(void*, int, char**, char**))isEmpty, &init, NULL);
 
 	if (init) {
-		// Initialize database
-		sqlite3_exec(db, "CREATE TABLE feeds (fID        NOT NULL PRIMARY KEY ON CONFLICT REPLACE,"
-		                                      "fTitle,"
-		                                      "fUpdated,"
-		                                      "fLink,"
-		                                      "fAuthor,"
-		                                      "fDesc);"
-				 "CREATE TABLE articles (aID       NOT NULL PRIMARY KEY ON CONFLICT REPLACE,"
-		                                        "fID,"
-		                                        "aTitle,"
-		                                        "aUpdated,"
-		                                        "aLink,"
-		                                        "aAuthor,"
-		                                        "aSummary,"
-		                                        "aContent);",
-		             NULL, NULL, NULL);
+		string meta =     "CREATE TABLE meta     (title,"
+		                                         "version);"
+		                          "INSERT INTO meta (title, version) VALUES ('" + replaceAll(filename, "'", "''") + "', 2);";
+		string feeds =    "CREATE TABLE feeds    (fID        NOT NULL PRIMARY KEY ON CONFLICT REPLACE,"
+		                                         "fTitle,"
+		                                         "fUpdated,"
+		                                         "fLink,"
+		                                         "fAuthor,"
+		                                         "fDesc);";
+		string articles = "CREATE TABLE articles (aID       NOT NULL PRIMARY KEY ON CONFLICT REPLACE,"
+		                                         "fID,"
+		                                         "aTitle,"
+		                                         "aUpdated,"
+		                                         "aLink,"
+		                                         "aAuthor,"
+		                                         "aSummary,"
+		                                         "aContent);";
+		sqlite3_exec(db, meta.append(feeds).append(articles).c_str(), NULL, NULL, NULL);
 		Log << "New database initialized" << Log.ENDL;
 	}
 }
@@ -334,18 +348,18 @@ void Database::exec(const std::string &cmd) {
  *
  *  \param cmd SQLite3 command to execute
  *  \param i   dummy parameter to differentiate from Database::exec(const std::string&)
- *  \return List of ArticleData generated from \p cmd
+ *  \return List of Data generated from \p cmd
  */
-std::vector<Database::ArticleData> *Database::exec(const std::string &cmd, int i) {
-	vector<Database::ArticleData> *out = new vector<Database::ArticleData>;
+std::vector<Database::Data> *Database::exec(const std::string &cmd, int i) {
+	vector<Database::Data> *out = new vector<Database::Data>;
 
 	sqlite3_exec(db, cmd.c_str(), (int (*)(void*, int, char**, char**))getEntries, out, NULL);
 
 	return out;
 }
 
-int Database::getEntries(std::vector<Database::ArticleData> *out, int cols, char *data[], char *colNames[]) {
-	Database::ArticleData m;
+int Database::getEntries(std::vector<Database::Data> *out, int cols, char *data[], char *colNames[]) {
+	Database::Data m;
 
 	for (int i = 0; i < cols; i++) {
 		m[colNames[i]] = (data[i] ? replaceAll(data[i], "''", "'") : "");
