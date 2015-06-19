@@ -1,6 +1,7 @@
 #include <ncursesui.hxx>
 
 #include <logger.hxx>
+#include <ncursesfeedlist.hxx>
 
 #include <curses.h>
 
@@ -8,7 +9,6 @@ using namespace std;
 
 
 NcursesUI         NcursesUI::base(0);
-unsigned char     NcursesUI::count(1);
 
 Database         *NcursesUI::db = NULL;
 
@@ -20,12 +20,11 @@ NcursesUI::NcursesUI(const std::string &filename) {
 	Log << "Initializing UI with database '" << filename << "'" << Log.ENDL;
 
 	if (feedlist) {
-		Log << "Previous UI found...";
+		Log << "Previous UI found; closing old UI";
 		close();
 	}
 
 	db = new Database(filename);
-	++count;
 
 	initscr();
 
@@ -33,7 +32,7 @@ NcursesUI::NcursesUI(const std::string &filename) {
 	noecho();
 	keypad(stdscr, TRUE);
 
-	feedlist = new NcursesFeedList(db);
+	feedlist = new NcursesFeedList(*db);
 
 	draw();
 
@@ -53,18 +52,14 @@ NcursesUI::~NcursesUI() {
 }
 
 
+//! \todo Winds up recreating panels every time called; find way to optimize.
 void NcursesUI::toggleFocus() {
-	clear();
-	Log << "Toggling focus to ";
-
 	switch (focus) {
 		case FeedList:
-			//focus = None;
-			Log << "None";
+			focus = None;
 			break;
 		case None:
 			focus = FeedList;
-			Log << "FeedList";
 			break;
 	}
 	Log << Log.ENDL;
@@ -76,19 +71,18 @@ void NcursesUI::toggleFocus() {
 
 
 void NcursesUI::close() {
-	if (--count == 0) {
-		Log << "Closing UI" << Log.ENDL;
+	Log << "Closing UI" << Log.ENDL;
 
-		if (feedlist) {
-			delete feedlist;
-			feedlist = NULL;
-		}
-
-		endwin();
+	if (feedlist) {
+		delete feedlist;
+		feedlist = NULL;
 	}
+
+	endwin();
 }
 
 void NcursesUI::draw() {
+	clear();
 	refresh();
 
 	feedlist->draw();

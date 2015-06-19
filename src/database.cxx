@@ -345,6 +345,7 @@ void Database::exec(const std::string &cmd) {
 	sqlite3_exec(db, cmd.c_str(), NULL, NULL, NULL);
 }
 /*! The user is expected to \c delete the returned \c vector when done.
+ *  \todo Remove above requirement.
  *
  *  \param cmd SQLite3 command to execute
  *  \param i   dummy parameter to differentiate from Database::exec(const std::string&)

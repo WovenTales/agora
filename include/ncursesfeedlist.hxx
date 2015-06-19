@@ -2,37 +2,32 @@
 #define NCURSESFEEDLIST_H
 
 class Database;
+#include <ncursespanel.hxx>
+#include <ncursesui.hxx>
 
-#include <curses.h>
+#include <vector>
 
-class NcursesFeedList {
+
+class NcursesFeedList : public NcursesPanel {
   private:
-	WINDOW   *list;
-	//! \todo Allow opening of multiple databases.
-	Database *db;
+	std::vector<std::string>                  dbs;
+	std::vector<std::vector<Database::Data> > feeds;
 
-	unsigned char &count;
+	unsigned char index;
 
-	bool expanded;
+	virtual std::string      name()  { return "feed list"; };
+	virtual NcursesUI::Panel indic() { return NcursesUI::FeedList; };
 
-	NcursesFeedList &operator--();
-
-	void init(int, int, int, int);
+	void loadDatabase(Database&);
 
   public:
-	//! Copy constructor.
-	NcursesFeedList(const NcursesFeedList&);
-	NcursesFeedList(Database* = NULL, bool = false);
-	virtual ~NcursesFeedList();
+	NcursesFeedList(bool = false);
+	NcursesFeedList(Database&, bool = false);
 
-	//! Standard assignment operator.
-	NcursesFeedList &operator=(const NcursesFeedList&);
+	virtual int height();
+	virtual int width();
 
-	int getHeight();
-	int getWidth();
-
-	void draw();
-	void update();
+	virtual void draw();
 };
 
 #endif

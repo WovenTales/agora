@@ -12,6 +12,8 @@ class Feed;
 
 
 //! An abstraction for a database on file.
+//! \todo Update so can have const Database instances (everything complains about exec not being const).
+//! \todo Public \c exec exposes too much control; encapsulate with safer get methods.
 class Database {
   private:
 	sqlite3 *db;
@@ -73,7 +75,7 @@ class Database {
 	 */
 
 	//! Execute a command on the database.
-	void                      exec(const std::string&);
+	void               exec(const std::string&);
 	//! Execute a command on the database, returning resulting data.
 	std::vector<Data> *exec(const std::string&, int);
 

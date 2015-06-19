@@ -1,4 +1,4 @@
-FILES = agora article database feed logger ncursesui ncursesfeedlist
+FILES = agora article database feed logger ncursesfeedlist ncursespanel ncursesui
 
 LOGFILE = agora.log
 

@@ -2,7 +2,7 @@
 #define NCURSESUI_H
 
 #include <database.hxx>
-#include <ncursesfeedlist.hxx>
+class NcursesFeedList;
 
 #include <string>
 
@@ -19,26 +19,23 @@ class NcursesUI {
 	//! Allow static singleton without always initing blank window.
 	NcursesUI(int) {};
 
+	NcursesUI(const NcursesUI&);
+	Database &operator=(const Database&);
+
 	static NcursesUI        base;
 
 	static Database        *db;
 	//! \todo Try to get working without pointer?
 	static NcursesFeedList *feedlist;
 
-	static unsigned char    count;
-
 	static Panel focus;
 
 	static void close();
 
   public:
+  	//! \todo Allow startup without active database.
 	NcursesUI(const std::string& = std::string(""));
-	//! Copy constructor.
-	NcursesUI(const NcursesUI&);
 	virtual ~NcursesUI();
-
-	//! Standard assignment operator.
-	Database &operator=(const Database&);
 
 	static Panel getFocus() { return focus; };
 
