@@ -3,6 +3,7 @@
 
 #include <agora.hxx>
 
+#include <map>
 #include <pugixml.hpp>
 #include <string>
 #include <time.h>
@@ -10,8 +11,21 @@
 
 //! An abstraction for a web news feed.
 class Feed {
+  public:
+	struct Column {
+		enum Name {
+			ID,
+			Title,
+			Link,
+			Author,
+			Description
+		};
+	};
+
   private:
 	Feed &operator=(const Feed&);
+
+	static std::map<Column::Name, std::string> initMap();
 
 	pugi::xml_document *const feed;
 	//! Counter to prevent early deletion of document.
@@ -51,6 +65,8 @@ class Feed {
 	Feed(std::string filename);
 	//! Standard deconstructor.
 	virtual ~Feed();
+
+	static const std::map<Column::Name, std::string> columns;
 
 	//! \return Author
 	std::string     getAuthor()      const { return author; };

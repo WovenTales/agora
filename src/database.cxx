@@ -13,6 +13,14 @@ using namespace pugi;
 using namespace std;
 
 
+const std::map<Database::Column::Name, std::string> Database::columns(initMap());
+std::map<Database::Column::Name, std::string> Database::initMap() {
+	map<Column::Name, string> out;
+	out[Column::Title]   = "title";
+	out[Column::Version] = "version";
+	return out;
+}
+
 Database::Database() : db(NULL), count(*new unsigned char(1)) {
 	open(":memory:");
 }
@@ -179,7 +187,7 @@ void Database::open(const std::string &filename) {
 		                                         "aAuthor,"
 		                                         "aSummary,"
 		                                         "aContent);";
-		sqlite3_exec(db, meta.append(feeds).append(articles).c_str(), NULL, NULL, NULL);
+		exec(meta.append(feeds).append(articles).c_str(), 0);
 		Log << "New database initialized" << Log.ENDL;
 	}
 }

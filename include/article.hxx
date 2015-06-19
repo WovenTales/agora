@@ -4,6 +4,7 @@
 #include <agora.hxx>
 class Feed;
 
+#include <map>
 #include <pugixml.hpp>
 #include <string>
 #include <time.h>
@@ -11,8 +12,23 @@ class Feed;
 
 //! A particular entry from some feed.
 class Article {
+  public:
+	struct Column {
+		enum Name {
+			ID,
+			Title,
+			Updated,
+			Link,
+			Author,
+			Summary,
+			Content
+		};
+	};
+
   private:
 	Article &operator=(const Article&);
+
+	static std::map<Column::Name, std::string> initMap();
 
 	// Expected members
 	std::string id;
@@ -47,6 +63,8 @@ class Article {
 			const std::string& ="", const std::string& ="", const std::string& ="");
 	//! Standard destructor.
 	virtual ~Article();
+
+	static const std::map<Column::Name, std::string> columns;
 	
 	//! \return Author  
 	std::string getAuthor()     const { return author; };  

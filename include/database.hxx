@@ -15,7 +15,23 @@ class Feed;
 //! \todo Update so can have const Database instances (everything complains about exec not being const).
 //! \todo Public \c exec exposes too much control; encapsulate with safer get methods.
 class Database {
+  public:
+	//! Mappings of (columnName) -> (data), representing a lower-level representation of an Article.
+	//! \todo Make enum or similar out of column names, so don't have to worry about exact implementation
+	typedef typename std::map<std::string, std::string> Data;
+
+	struct Column {
+		enum Name {
+			Title,
+			Version
+		};
+	};
+
   private:
+	Database &operator--();
+
+	static std::map<Column::Name, std::string> initMap();
+
 	sqlite3 *db;
 
 	std::queue<const Feed*> feedStage;
@@ -23,13 +39,11 @@ class Database {
 
 	unsigned char &count;
 
-	Database &operator--();
-
 	//! Close database.
 	void close(bool = false);
 
 	// For use in sqlite3_exec() calls
-	static int getEntries(std::vector<std::map<std::string, std::string> >*, int, char*[], char*[]);
+	static int getEntries(std::vector<Data>*, int, char*[], char*[]);
 	static int isEmpty(bool*, int, char*[], char*[]);
 
   public:
@@ -45,9 +59,7 @@ class Database {
 	//! Standard assignment operator.
 	Database &operator=(const Database&);
 
-	//! Mappings of (columnName) -> (data), representing a lower-level representation of an Article.
-	//! \todo Make enum or similar out of column names, so don't have to worry about exact implementation
-	typedef typename std::map<std::string, std::string> Data;
+	static const std::map<Column::Name, std::string> columns;
 
 	//! Get title assigned to database.
 	std::string getTitle();
