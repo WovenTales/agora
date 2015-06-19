@@ -1,4 +1,4 @@
-#include <ncursesfeedlist.hxx>
+#include <ncursesdatabasepanel.hxx>
 
 #include <agora.hxx>
 #include <database.hxx>
@@ -14,23 +14,23 @@ using namespace agora;
 using namespace std;
 
 
-NcursesFeedList::NcursesFeedList(bool max) : NcursesPanel(max), dbs(), feeds() {
+NcursesDatabasePanel::NcursesDatabasePanel(bool max) : NcursesPanel(max), dbs(), feeds() {
 	index = 0;
 	update();
 }
 
-NcursesFeedList::NcursesFeedList(Database &data, bool max) : NcursesPanel(max), dbs(), feeds() {
+NcursesDatabasePanel::NcursesDatabasePanel(Database &data, bool max) : NcursesPanel(max), dbs(), feeds() {
 	index = 0;
 	loadDatabase(data);
 	update();
 }
 
 
-int NcursesFeedList::height() {
+int NcursesDatabasePanel::height() {
 	return 0;
 }
 
-int NcursesFeedList::width() {
+int NcursesDatabasePanel::width() {
 	if (expanded) {
 		return 60;
 	} else {
@@ -39,7 +39,7 @@ int NcursesFeedList::width() {
 }
 
 
-void NcursesFeedList::draw() {
+void NcursesDatabasePanel::draw() {
 	Log << "Initializing feed list" << Log.ENDL;
 
 	box(panel, 0, 0);
@@ -94,7 +94,7 @@ void NcursesFeedList::draw() {
 }
 
 
-void NcursesFeedList::loadDatabase(Database &data) {
+void NcursesDatabasePanel::loadDatabase(Database &data) {
 	dbs.push_back(data.getTitle());
 	feeds.push_back(*data.exec("SELECT fTitle FROM feeds;", 0));
 }

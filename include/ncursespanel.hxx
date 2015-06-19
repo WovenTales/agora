@@ -18,7 +18,6 @@ class NcursesPanel {
 
 	bool expanded;
 
-	virtual std::string      name() =0;
 	virtual NcursesUI::Panel indic() =0;
 
 	NcursesPanel &operator--();

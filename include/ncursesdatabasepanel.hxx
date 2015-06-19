@@ -1,5 +1,5 @@
-#ifndef NCURSESFEEDLIST_H
-#define NCURSESFEEDLIST_H
+#ifndef NCURSESDATABASEPANEL_H
+#define NCURSESDATABASEPANEL_H
 
 class Database;
 #include <ncursespanel.hxx>
@@ -8,21 +8,20 @@ class Database;
 #include <vector>
 
 
-class NcursesFeedList : public NcursesPanel {
+class NcursesDatabasePanel : public NcursesPanel {
   private:
 	std::vector<std::string>                  dbs;
 	std::vector<std::vector<Database::Data> > feeds;
 
 	unsigned char index;
 
-	virtual std::string      name()  { return "feed list"; };
-	virtual NcursesUI::Panel indic() { return NcursesUI::FeedList; };
+	virtual NcursesUI::Panel indic() { return NcursesUI::DatabasePanel; };
 
 	void loadDatabase(Database&);
 
   public:
-	NcursesFeedList(bool = false);
-	NcursesFeedList(Database&, bool = false);
+	NcursesDatabasePanel(bool = false);
+	NcursesDatabasePanel(Database&, bool = false);
 
 	virtual int height();
 	virtual int width();
