@@ -2,6 +2,7 @@
 
 #include <database.hxx>
 #include <logger.hxx>
+#include <ncursesui.hxx>
 
 #include <iostream>
 #include <string>
@@ -10,26 +11,10 @@
 using namespace std;
 
 
-NcursesFeedList::NcursesFeedList(Database *data, int lines, int cols, int x, int y) : count(*new unsigned char(1)), db(data) {
+NcursesFeedList::NcursesFeedList(Database *data, bool max) : count(*new unsigned char(1)), db(data) {
 	if (data) {
-		string title = db->getTitle();
-		Log << "Initializing feed list with '" << title << "'" << Log.ENDL;
-		refresh();
-
-		init(lines, cols, x, y);
-
-		box(list, 0, 0);
-		waddstr(list, title.c_str());
-
-		vector<Database::Data> *feeds = db->exec("SELECT fTitle FROM feeds;", 0);
-		//! \todo Prevent overflow if more feeds than lines.
-		int s = feeds->size();
-		for (int i = 0; i < s; i++) {
-			mvaddstr(i + 1, 2, (*feeds)[i]["fTitle"].c_str());
-			Log << "Found feed '" << (*feeds)[i]["fTitle"] << "'" << Log.ENDL;
-		}
-
-		wrefresh(list);
+		expanded = max;
+		update();
 	} else {
 		Log << "Initializing blank feed list" << Log.ENDL;
 
@@ -54,6 +39,7 @@ NcursesFeedList::~NcursesFeedList() {
 		if (list) {
 			// Potentially unnecessary, but doesn't hurt to include
 			wborder(list, ' ', ' ', ' ',' ',' ',' ',' ',' ');
+
 			wrefresh(list);
 
 			delwin(list);
@@ -74,28 +60,75 @@ NcursesFeedList &NcursesFeedList::operator=(const NcursesFeedList &d) {
 }
 
 
-void NcursesFeedList::init(int lines, int cols, int x, int y) {
-	Log << "Resetting feed list to " << lines << ", " << cols << ", " << x << ", " << y << Log.ENDL;
+int NcursesFeedList::getHeight() {
+	return 0;
+}
 
-	int maxX, maxY;
-	getmaxyx(stdscr, maxY, maxX);
-	
-	if ((lines < 0) || (lines > (maxY - y))) {
-		//! \todo Better error handling
-		cerr << "lines out of bounds" << endl;
+int NcursesFeedList::getWidth() {
+	if (expanded) {
+		return 60;
+	} else {
+		return 20;
 	}
-	if ((cols < 0) || (cols > (maxX - x))) {
-		//! \todo Better error handling
-		cerr << "cols out of bounds" << endl;
+}
+
+
+void NcursesFeedList::draw() {
+	string title = db->getTitle();
+	Log << "Initializing feed list with '" << title << "'" << Log.ENDL;
+
+	box(list, 0, 0);
+	mvwaddstr(list, 0, 0, title.c_str());
+
+	vector<Database::Data> *feeds = db->exec("SELECT fTitle FROM feeds;", 0);
+
+	int s = feeds->size();
+	int h = (getHeight() == 0 ? LINES : getHeight());
+	int w = (getWidth() == 0 ? COLS : getWidth());
+
+	//! \todo Implement scrollable list.
+	if (s > h - 2) {
+		s = h - 2;
+		mvwaddch(list, h - 2, w - 1, ACS_UARROW);
+		mvwaddch(list, h - 1, w - 1, ACS_DARROW);
 	}
-	if ((x < 0) || (x > (maxX - 1))) {
-		//! \todo Better error handling
-		cerr << "x out of bounds" << endl;
-	}
-	if ((y < 0) || (y > (maxY - 1))) {
-		//! \todo Better error handling
-		cerr << "y out of bounds" << endl;
+	for (int i = 0; i < s; i++) {
+		mvwaddnstr(list, i + 1, 2, (*feeds)[i]["fTitle"].c_str(), w - 3);
+		Log << "Found feed '" << (*feeds)[i]["fTitle"] << "'" << Log.ENDL;
 	}
 
-	list = newwin(lines, cols, x, y);
+	wrefresh(list);
+}
+
+void NcursesFeedList::update() {
+	if ((!list) || (expanded != (NcursesUI::getFocus() == NcursesUI::FeedList))) {
+		if (list) {
+			delwin(list);
+		}
+
+		/*
+		int maxX, maxY;
+		getmaxyx(stdscr, maxY, maxX);
+
+		if ((lines < 0) || (lines > (maxY - y))) {
+			//! \todo Better error handling
+			cerr << "lines out of bounds" << endl;
+		}
+		if ((cols < 0) || (cols > (maxX - x))) {
+			//! \todo Better error handling
+			cerr << "cols out of bounds" << endl;
+		}
+		if ((x < 0) || (x > (maxX - 1))) {
+			//! \todo Better error handling
+			cerr << "x out of bounds" << endl;
+		}
+		if ((y < 0) || (y > (maxY - 1))) {
+			//! \todo Better error handling
+			cerr << "y out of bounds" << endl;
+		}
+		*/
+
+		expanded = !expanded;
+		list = newwin(getHeight(), getWidth(), 0, 0);
+	}
 }

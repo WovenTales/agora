@@ -8,9 +8,12 @@ class Database;
 class NcursesFeedList {
   private:
 	WINDOW   *list;
+	//! \todo Allow opening of multiple databases.
 	Database *db;
 
 	unsigned char &count;
+
+	bool expanded;
 
 	NcursesFeedList &operator--();
 
@@ -19,11 +22,17 @@ class NcursesFeedList {
   public:
 	//! Copy constructor.
 	NcursesFeedList(const NcursesFeedList&);
-	NcursesFeedList(Database* = NULL, int = 0, int = 0, int = 0, int = 0);
+	NcursesFeedList(Database* = NULL, bool = false);
 	virtual ~NcursesFeedList();
 
 	//! Standard assignment operator.
 	NcursesFeedList &operator=(const NcursesFeedList&);
+
+	int getHeight();
+	int getWidth();
+
+	void draw();
+	void update();
 };
 
 #endif

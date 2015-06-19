@@ -9,6 +9,12 @@
 
 //! \todo Generates large amount of leaked memory.
 class NcursesUI {
+  public:
+	enum Panel {
+		FeedList,
+		None
+	};
+
   private:
 	//! Allow static singleton without always initing blank window.
 	NcursesUI(int) {};
@@ -21,6 +27,10 @@ class NcursesUI {
 
 	static unsigned char    count;
 
+	static Panel focus;
+
+	static void close();
+
   public:
 	NcursesUI(const std::string& = std::string(""));
 	//! Copy constructor.
@@ -30,7 +40,11 @@ class NcursesUI {
 	//! Standard assignment operator.
 	Database &operator=(const Database&);
 
-	static void close();
+	static Panel getFocus() { return focus; };
+
+	static void toggleFocus();
+
+	static void draw();
 };
 
 #endif

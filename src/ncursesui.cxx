@@ -7,11 +7,13 @@
 using namespace std;
 
 
-NcursesUI        NcursesUI::base(0);
-unsigned char    NcursesUI::count(1);
+NcursesUI         NcursesUI::base(0);
+unsigned char     NcursesUI::count(1);
 
-Database        *NcursesUI::db = NULL;
-NcursesFeedList *NcursesUI::feedlist = NULL;
+Database         *NcursesUI::db = NULL;
+
+NcursesUI::Panel  NcursesUI::focus = NcursesUI::FeedList;
+NcursesFeedList  *NcursesUI::feedlist = NULL;
 
 
 NcursesUI::NcursesUI(const std::string &filename) {
@@ -32,13 +34,44 @@ NcursesUI::NcursesUI(const std::string &filename) {
 	keypad(stdscr, TRUE);
 
 	feedlist = new NcursesFeedList(db);
-	refresh();
 
-	getch();
+	draw();
+
+	int ch;
+	while (true) {
+		ch = getch();
+		if (ch == '\t') {
+			toggleFocus();
+		} else {
+			break;
+		}
+	}
 }
 
 NcursesUI::~NcursesUI() {
 	close();
+}
+
+
+void NcursesUI::toggleFocus() {
+	clear();
+	Log << "Toggling focus to ";
+
+	switch (focus) {
+		case FeedList:
+			//focus = None;
+			Log << "None";
+			break;
+		case None:
+			focus = FeedList;
+			Log << "FeedList";
+			break;
+	}
+	Log << Log.ENDL;
+
+	feedlist->update();
+
+	draw();
 }
 
 
@@ -53,4 +86,10 @@ void NcursesUI::close() {
 
 		endwin();
 	}
+}
+
+void NcursesUI::draw() {
+	refresh();
+
+	feedlist->draw();
 }
