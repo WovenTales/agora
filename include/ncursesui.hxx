@@ -3,6 +3,7 @@
 
 #include <database.hxx>
 class NcursesDatabasePanel;
+class NcursesFeedPanel;
 
 #include <curses.h>
 #include <math.h>
@@ -20,7 +21,7 @@ class NcursesUI {
   public:
 	enum Panel {
 		DatabasePanel,
-		None
+		FeedPanel
 	};
 
   private:
@@ -34,6 +35,7 @@ class NcursesUI {
 
 	static std::vector<Database>  db;
 	static NcursesDatabasePanel  *dbPanel;
+	static NcursesFeedPanel      *feedPanel;
 
 	static Panel focus;
 
@@ -50,6 +52,7 @@ class NcursesUI {
 
 	static void openDatabase(const std::string&);
 	static void openDatabase(Database&);
+	static void openFeed(const std::string&);
 
 	static void draw();
 };
