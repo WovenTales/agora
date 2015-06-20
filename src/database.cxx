@@ -127,16 +127,18 @@ Article Database::makeArticle(const Database::Data data) {
  *  \param force whether to skip saving changes (default: save)
  */
 void Database::close(bool force) {
-	Log << "Closing database" << Log.ENDL;
+	if (db) {
+		Log << "Closing database" << Log.ENDL;
 
-	if (force) {
-		clearStaged();
-	} else {
-		save();
+		if (force) {
+			clearStaged();
+		} else {
+			save();
+		}
+		sqlite3_close(db);
+
+		db = NULL;
 	}
-	sqlite3_close(db);
-
-	db = NULL;
 }
 
 
@@ -351,15 +353,15 @@ void Database::exec(const std::string &cmd) {
  *  \param i   dummy parameter to differentiate from Database::exec(const std::string&)
  *  \return List of Data generated from \p cmd
  */
-std::vector<Database::Data> *Database::exec(const std::string &cmd, int i) {
-	vector<Database::Data> *out = new vector<Database::Data>;
+Database::DataList *Database::exec(const std::string &cmd, int i) {
+	DataList *out = new DataList;
 
 	sqlite3_exec(db, cmd.c_str(), (int (*)(void*, int, char**, char**))getEntries, out, NULL);
 
 	return out;
 }
 
-int Database::getEntries(std::vector<Database::Data> *out, int cols, char *data[], char *colNames[]) {
+int Database::getEntries(Database::DataList *out, int cols, char *data[], char *colNames[]) {
 	Database::Data m;
 
 	for (int i = 0; i < cols; i++) {
