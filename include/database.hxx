@@ -61,6 +61,11 @@ class Database {
 
 	static const std::map<Column::Name, std::string> columns;
 
+	//! Mappings of (columnName) -> (data), representing a lower-level representation of an Article.
+	//! \todo Make enum or similar out of column names, so don't have to worry about exact implementation
+	typedef typename std::map<std::string, std::string> Data;
+	typedef typename std::vector<Data>                  DataList;
+
 	//! Get title assigned to database.
 	std::string getTitle();
 
@@ -87,9 +92,9 @@ class Database {
 	 */
 
 	//! Execute a command on the database.
-	void               exec(const std::string&);
+	void      exec(const std::string&);
 	//! Execute a command on the database, returning resulting data.
-	std::vector<Data> *exec(const std::string&, int);
+	DataList *exec(const std::string&, int);
 
 // private: void clearStaged(std::queue<T*>&);
 #include <database.tcc>

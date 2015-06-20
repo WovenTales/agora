@@ -1,19 +1,19 @@
 #include <ncursesui.hxx>
 
 #include <logger.hxx>
-#include <ncursesfeedlist.hxx>
+#include <ncursesdatabasepanel.hxx>
 
 #include <curses.h>
 
 using namespace std;
 
 
-NcursesUI         NcursesUI::base(0);
+NcursesUI              NcursesUI::base(0);
 
-Database         *NcursesUI::db = NULL;
+Database              *NcursesUI::db = NULL;
 
-NcursesUI::Panel  NcursesUI::focus = NcursesUI::FeedList;
-NcursesFeedList  *NcursesUI::feedlist = NULL;
+NcursesUI::Panel       NcursesUI::focus = NcursesUI::DatabasePanel;
+NcursesDatabasePanel  *NcursesUI::feedlist = NULL;
 
 
 NcursesUI::NcursesUI(const std::string &filename) {
@@ -32,7 +32,7 @@ NcursesUI::NcursesUI(const std::string &filename) {
 	noecho();
 	keypad(stdscr, TRUE);
 
-	feedlist = new NcursesFeedList(*db);
+	feedlist = new NcursesDatabasePanel(*db);
 
 	draw();
 
@@ -55,11 +55,11 @@ NcursesUI::~NcursesUI() {
 //! \todo Winds up recreating panels every time called; find way to optimize.
 void NcursesUI::toggleFocus() {
 	switch (focus) {
-		case FeedList:
+		case DatabasePanel:
 			focus = None;
 			break;
 		case None:
-			focus = FeedList;
+			focus = DatabasePanel;
 			break;
 	}
 	Log << Log.ENDL;

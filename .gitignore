@@ -5,3 +5,7 @@ obj/*
 
 *.log
 *.swp
+
+*.rss
+*.atom
+*.sqlite

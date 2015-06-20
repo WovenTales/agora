@@ -2,7 +2,7 @@
 #define NCURSESUI_H
 
 #include <database.hxx>
-class NcursesFeedList;
+class NcursesDatabasePanel;
 
 #include <string>
 
@@ -11,7 +11,7 @@ class NcursesFeedList;
 class NcursesUI {
   public:
 	enum Panel {
-		FeedList,
+		DatabasePanel,
 		None
 	};
 
@@ -22,11 +22,11 @@ class NcursesUI {
 	NcursesUI(const NcursesUI&);
 	Database &operator=(const Database&);
 
-	static NcursesUI        base;
+	static NcursesUI             base;
 
-	static Database        *db;
+	static Database             *db;
 	//! \todo Try to get working without pointer?
-	static NcursesFeedList *feedlist;
+	static NcursesDatabasePanel *feedlist;
 
 	static Panel focus;
 
