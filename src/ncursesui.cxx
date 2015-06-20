@@ -10,21 +10,19 @@ using namespace std;
 
 NcursesUI              NcursesUI::base(0);
 
-Database              *NcursesUI::db = NULL;
+std::vector<Database>  NcursesUI::db;
 
-NcursesUI::Panel       NcursesUI::focus = NcursesUI::DatabasePanel;
-NcursesDatabasePanel  *NcursesUI::feedlist = NULL;
+NcursesUI::Panel       NcursesUI::focus     = NcursesUI::DatabasePanel;
+NcursesDatabasePanel  *NcursesUI::dbPanel   = NULL;
 
 
 NcursesUI::NcursesUI(const std::string &filename) {
 	Log << "Initializing UI with database '" << filename << "'" << Log.ENDL;
 
-	if (feedlist) {
+	if (dbPanel) {
 		Log << "Previous UI found; closing old UI";
 		close();
 	}
-
-	db = new Database(filename);
 
 	initscr();
 
@@ -32,7 +30,9 @@ NcursesUI::NcursesUI(const std::string &filename) {
 	noecho();
 	keypad(stdscr, TRUE);
 
-	feedlist = new NcursesDatabasePanel(*db);
+	dbPanel = new NcursesDatabasePanel(true);
+
+	openDatabase(filename);
 
 	draw();
 
@@ -62,28 +62,35 @@ void NcursesUI::toggleFocus() {
 			focus = DatabasePanel;
 			break;
 	}
-	Log << Log.ENDL;
-
-	feedlist->update();
+	dbPanel->update();
 
 	draw();
 }
 
+void NcursesUI::openDatabase(const std::string &filename) {
+	Database tmp(filename);
+	openDatabase(tmp);
+}
+void NcursesUI::openDatabase(Database &in) {
+	db.push_back(in);
+	dbPanel->loadDatabase(in);
+}
+
 
 void NcursesUI::close() {
-	Log << "Closing UI" << Log.ENDL;
+	if (dbPanel) {
+		Log << "Closing UI" << Log.ENDL;
 
-	if (feedlist) {
-		delete feedlist;
-		feedlist = NULL;
+		delete dbPanel;
+		dbPanel = NULL;
+
+		endwin();
 	}
-
-	endwin();
 }
 
 void NcursesUI::draw() {
 	clear();
 	refresh();
 
-	feedlist->draw();
+	dbPanel->draw();
 }

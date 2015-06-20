@@ -4,7 +4,15 @@
 #include <database.hxx>
 class NcursesDatabasePanel;
 
+#include <curses.h>
+#include <math.h>
 #include <string>
+#include <vector>
+
+
+//! \todo Smooth so don't take up more space than necessary (DVI shouldn't require resizing of panels).
+#define DBPANEL_WIDTH_ACTIVE    60
+#define DBPANEL_WIDTH_MINIMIZED std::max(20, std::min(COLS / 5, 60))
 
 
 //! \todo Generates large amount of leaked memory.
@@ -20,13 +28,12 @@ class NcursesUI {
 	NcursesUI(int) {};
 
 	NcursesUI(const NcursesUI&);
-	Database &operator=(const Database&);
+	NcursesUI &operator=(const NcursesUI&);
 
-	static NcursesUI             base;
+	static NcursesUI              base;
 
-	static Database             *db;
-	//! \todo Try to get working without pointer?
-	static NcursesDatabasePanel *feedlist;
+	static std::vector<Database>  db;
+	static NcursesDatabasePanel  *dbPanel;
 
 	static Panel focus;
 
@@ -40,6 +47,9 @@ class NcursesUI {
 	static Panel getFocus() { return focus; };
 
 	static void toggleFocus();
+
+	static void openDatabase(const std::string&);
+	static void openDatabase(Database&);
 
 	static void draw();
 };

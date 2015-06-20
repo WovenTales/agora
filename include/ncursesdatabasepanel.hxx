@@ -1,7 +1,7 @@
 #ifndef NCURSESDATABASEPANEL_H
 #define NCURSESDATABASEPANEL_H
 
-class Database;
+#include <database.hxx>
 #include <ncursespanel.hxx>
 #include <ncursesui.hxx>
 
@@ -10,23 +10,20 @@ class Database;
 
 class NcursesDatabasePanel : public NcursesPanel {
   private:
-	std::vector<std::string>                  dbs;
-	std::vector<std::vector<Database::Data> > feeds;
-
-	unsigned char index;
-
+	virtual std::string      name()  { return "database"; };
 	virtual NcursesUI::Panel indic() { return NcursesUI::DatabasePanel; };
 
-	void loadDatabase(Database&);
-
   public:
-	NcursesDatabasePanel(bool = false);
-	NcursesDatabasePanel(Database&, bool = false);
+	NcursesDatabasePanel(bool max = false) : NcursesPanel(max) { update(); } ;
 
-	virtual int height();
-	virtual int width();
+	virtual inline int height();
+	virtual inline int width();
+	virtual inline int x();
+	virtual inline int y();
 
-	virtual void draw();
+	virtual void fill();
+
+	void loadDatabase(Database&);
 };
 
 #endif
