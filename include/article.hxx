@@ -12,23 +12,8 @@ class Feed;
 
 //! A particular entry from some feed.
 class Article {
-  public:
-	struct Column {
-		enum Name {
-			ID,
-			Title,
-			Updated,
-			Link,
-			Author,
-			Summary,
-			Content
-		};
-	};
-
   private:
 	Article &operator=(const Article&);
-
-	static std::map<Column::Name, std::string> initMap();
 
 	// Expected members
 	std::string id;
@@ -64,8 +49,6 @@ class Article {
 	//! Standard destructor.
 	virtual ~Article();
 
-	static const std::map<Column::Name, std::string> columns;
-	
 	//! \return Author  
 	std::string getAuthor()     const { return author; };  
 	//! \return Content

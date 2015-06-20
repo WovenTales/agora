@@ -12,7 +12,7 @@ DOCDIR = docs
 
 DEFINE = -DLOGFILE=\"$(LOGFILE)\"
 INCLUDE = -I./$(INCDIR) -lpugixml -lsqlite3 -lncurses
-FLAGS = $(DEFINE) $(INCLUDE)
+FLAGS = $(DEFINE) $(INCLUDE) --std=c++11
 
 SOURCES = $(FILES:%=$(SRCDIR)/%.cxx)
 HEADERS = $(FILES:%=$(INCDIR)/%.hxx) $(addprefix $(INCDIR)/,logger.tcc)

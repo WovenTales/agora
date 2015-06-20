@@ -11,20 +11,6 @@ using namespace pugi;
 using namespace std;
 
 
-const std::map<Article::Column::Name, std::string> Article::columns(initMap());
-std::map<Article::Column::Name, std::string> Article::initMap() {
-	map<Column::Name, string> out;
-	out[Column::ID]      = "fID";
-	out[Column::Title]   = "fTitle";
-	out[Column::Updated] = "fLink";
-	out[Column::Link]    = "fLink";
-	out[Column::Author]  = "fAuthor";
-	out[Column::Summary] = "fDesc";
-	out[Column::Content] = "fDesc";
-	return out;
-}
-
-
 /*! Sets all parameters to empty string or equivalent.
  */
 Article::Article() : parent(*new Feed) {

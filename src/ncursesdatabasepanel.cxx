@@ -86,7 +86,7 @@ void NcursesDatabasePanel::draw() {
 			mvwaddch(panel, h - 1, w - 1, ACS_DARROW);
 		}
 		for (int i = 0; i < s; ++i) {
-			mvwaddnstr(panel, i + 1, 2, replaceAll(feeds[index][i]["fTitle"], "''", "'").c_str(), w - 3);
+			mvwaddnstr(panel, i + 1, 2, replaceAll(feeds[index][i][Database::Column::FeedTitle], "''", "'").c_str(), w - 3);
 		}
 	}
 
@@ -94,7 +94,9 @@ void NcursesDatabasePanel::draw() {
 }
 
 
-void NcursesDatabasePanel::loadDatabase(Database &data) {
-	dbs.push_back(data.getTitle());
-	feeds.push_back(*data.exec("SELECT fTitle FROM feeds;", 0));
+void NcursesDatabasePanel::loadDatabase(Database &db) {
+	dbs.push_back(db.getTitle());
+
+	Database::DataList tmp = db.getColumns({ Database::Column::FeedTitle });
+	feeds.push_back(tmp);
 }

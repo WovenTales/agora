@@ -12,18 +12,6 @@ using namespace pugi;
 using namespace std;
 
 
-const std::map<Feed::Column::Name, std::string> Feed::columns(initMap());
-std::map<Feed::Column::Name, std::string> Feed::initMap() {
-	map<Column::Name, string> out;
-	out[Column::ID]          = "fID";
-	out[Column::Title]       = "fTitle";
-	out[Column::Link]        = "fLink";
-	out[Column::Author]      = "fAuthor";
-	out[Column::Description] = "fDesc";
-	return out;
-}
-
-
 Feed::Feed() : feed(NULL), docRefs(*new unsigned char(1)), feedRefs(*new unsigned char(1)) {
 	id = "";
 	title = "";
