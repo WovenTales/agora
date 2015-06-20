@@ -14,6 +14,56 @@ using namespace pugi;
 using namespace std;
 
 
+// Note that every title must be unique!
+Database::Column::Name Database::Column::DBTitle(         "meta",    "title");
+Database::Column::Name Database::Column::DBVersion(       "meta",    "version");
+
+Database::Column::Name Database::Column::ArticleID(       "articles", "aID");
+Database::Column::Name Database::Column::ArticleTitle(    "articles", "aTitle");
+Database::Column::Name Database::Column::ArticleUpdated(  "articles", "aUpdated");
+Database::Column::Name Database::Column::ArticleLink(     "articles", "aLink");
+Database::Column::Name Database::Column::ArticleAuthor(   "articles", "aAuthor");
+Database::Column::Name Database::Column::ArticleSummary(  "articles", "aSummary");
+Database::Column::Name Database::Column::ArticleContent(  "articles", "aContent");
+
+Database::Column::Name Database::Column::FeedID(          "feeds",    "fID");
+Database::Column::Name Database::Column::FeedTitle(       "feeds",    "fTitle");
+Database::Column::Name Database::Column::FeedLink(        "feeds",    "fLink");
+Database::Column::Name Database::Column::FeedAuthor(      "feeds",    "fAuthor");
+Database::Column::Name Database::Column::FeedDescription( "feeds",    "fDesc");
+
+
+Database::Column::Name Database::Column::parse(const std::string &name) {
+	static vector<Name> cols = {
+		DBTitle,
+		DBVersion,
+
+		ArticleID,
+		ArticleTitle,
+		ArticleUpdated,
+		ArticleLink,
+		ArticleAuthor,
+		ArticleSummary,
+		ArticleContent,
+
+		FeedID,
+		FeedTitle,
+		FeedLink,
+		FeedAuthor,
+		FeedDescription
+	};
+
+	for (Name c : cols) {
+		if (c.column == name) {
+			return c;
+		}
+	}
+
+	//! \todo Throw error as incorrect column title.
+}
+
+
+
 Database::Database() : db(NULL), count(*new unsigned char(1)) {
 	open(":memory:");
 }
@@ -103,8 +153,9 @@ Database::DataList Database::getColumns(const std::initializer_list<Database::Co
 		}
 	}
 
-	string cmd = "SELECT " + (cols.size() ? cmdColumn : "*") + " FROM " + cmdTables + cmdWhere;
+	string cmd = "SELECT " + (cols.size() ? cmdColumn : "*") + " FROM " + cmdTables + cmdWhere + ";";
 
+	Log << "Looking for columns following command '" << cmd << "'" << Log.ENDL;
 	DataList out;
 	sqlite3_exec(db, cmd.c_str(), (int (*)(void*, int, char**, char**))getEntries, &out, NULL);
 	return out;
@@ -402,54 +453,4 @@ int Database::isEmpty(bool *out, int cols, char *data[], char *colNames[]) {
 		*out = false;
 	}
 	return 0;
-}
-
-
-
-// Note that every title must be unique!
-Database::Column::Name Database::Column::DBTitle(         "meta",    "title");
-Database::Column::Name Database::Column::DBVersion(       "meta",    "version");
-
-Database::Column::Name Database::Column::ArticleID(       "article", "aID");
-Database::Column::Name Database::Column::ArticleTitle(    "article", "aTitle");
-Database::Column::Name Database::Column::ArticleUpdated(  "article", "aUpdated");
-Database::Column::Name Database::Column::ArticleLink(     "article", "aLink");
-Database::Column::Name Database::Column::ArticleAuthor(   "article", "aAuthor");
-Database::Column::Name Database::Column::ArticleSummary(  "article", "aSummary");
-Database::Column::Name Database::Column::ArticleContent(  "article", "aContent");
-
-Database::Column::Name Database::Column::FeedID(          "feed",    "fID");
-Database::Column::Name Database::Column::FeedTitle(       "feed",    "fTitle");
-Database::Column::Name Database::Column::FeedLink(        "feed",    "fLink");
-Database::Column::Name Database::Column::FeedAuthor(      "feed",    "fAuthor");
-Database::Column::Name Database::Column::FeedDescription( "feed",    "fDesc");
-
-
-Database::Column::Name Database::Column::parse(const std::string &name) {
-	static vector<Name> cols = {
-		DBTitle,
-		DBVersion,
-
-		ArticleID,
-		ArticleTitle,
-		ArticleUpdated,
-		ArticleLink,
-		ArticleAuthor,
-		ArticleSummary,
-		ArticleContent,
-
-		FeedID,
-		FeedTitle,
-		FeedLink,
-		FeedAuthor,
-		FeedDescription
-	};
-
-	for (Name c : cols) {
-		if (c.column == name) {
-			return c;
-		}
-	}
-
-	//! \todo Throw error as incorrect column title.
 }

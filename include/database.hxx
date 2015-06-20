@@ -96,6 +96,7 @@ class Database {
 	//! Standard assignment operator.
 	Database &operator=(const Database&);
 
+	//! Lookup specifed columns in database.
 	DataList getColumns(const std::initializer_list<Column::Name>&,
 	                    const std::initializer_list<std::pair<Column::Name, std::string> >& = {}) const;
 	//! Get title assigned to database.
