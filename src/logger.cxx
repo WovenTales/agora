@@ -13,7 +13,7 @@ Logger Log(LOGFILE);
  *
  *  \param filename the logfile to save to, or ""
  */
-Logger::Logger(std::string filename) : count(*new unsigned char(1)), error(*new bool(false)), terminated(*new bool(true)) {
+Logger::Logger(std::string filename) : count(*new unsigned char(1)), error(*new bool(false)), terminated(*new bool(true)), continued(*new bool(false)) {
 	if (filename.empty()) {
 		logfile = NULL;
 	} else {
@@ -24,7 +24,7 @@ Logger::Logger(std::string filename) : count(*new unsigned char(1)), error(*new 
 
 /*! \param l the Logger to copy
  */
-Logger::Logger(const Logger &l) : count(l.count), error(l.error), terminated(l.terminated) {
+Logger::Logger(const Logger &l) : count(l.count), error(l.error), terminated(l.terminated), continued(l.continued) {
 	logfile = l.logfile;
 
 	++(*this);
@@ -53,6 +53,7 @@ Logger &Logger::operator=(const Logger &l) {
 	error      = l.error;
 	logfile    = l.logfile;
 	terminated = l.terminated;
+	continued  = l.continued;
 
 	++(*this);
 }
@@ -68,16 +69,21 @@ Logger &Logger::operator--() {
 		delete &count;
 		delete &error;
 		delete &terminated;
+		delete &continued;
 	}
 }
 
 Logger &Logger::operator<<(const Logger::Command &in) {
-	if ((in & ENDL_BIT) && !(in & CONTINUE_BIT)) {
+	if ((in & CONTINUE_BIT) && ((in & ERROR_BIT) == error)) {
+		continued = true;
+	}
+
+	if (in & ENDL_BIT) {
 		if ((in & FORCE_BIT) || (!terminated)) {
 			stream() << endl;
-			error = false;
 			terminated = true;
 		}
+		error = false;
 	}
 
 	if (in & ERROR_BIT) {

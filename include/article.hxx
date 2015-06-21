@@ -4,6 +4,7 @@
 #include <agora.hxx>
 class Feed;
 
+#include <map>
 #include <pugixml.hpp>
 #include <string>
 #include <time.h>
@@ -47,7 +48,7 @@ class Article {
 			const std::string& ="", const std::string& ="", const std::string& ="");
 	//! Standard destructor.
 	virtual ~Article();
-	
+
 	//! \return Author  
 	std::string getAuthor()     const { return author; };  
 	//! \return Content

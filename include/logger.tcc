@@ -13,13 +13,21 @@ Logger &operator<<(const T &in) {
 		time(&t);
 		strftime(s, 32, "%x %X", localtime(&t));
 
-		stream() << "[" << s << "] ";
+		std::string str("[");
+		str.append(s);
+		str.append("]");
+		if (continued) {
+			str.replace(0, std::string::npos, str.length(), ' ');
+		}
+
+		stream() << str << " ";
 	}
 
 	stream() << in;
 	stream().flush();
 
 	terminated = false;
+	continued = false;
 
 	return *this;
 }
