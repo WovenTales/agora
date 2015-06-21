@@ -131,15 +131,18 @@ Database::DataList Database::getColumns(const std::initializer_list<Database::Co
 
 	firstCol = true;
 	for (pair<const Column::Name, string > w : where) {
-		if (find(tables.begin(), tables.end(), w.first.table) != tables.end()) {
-			string val = replaceAll(w.second, "'", "''");
+		if (!cols.size() || (find(tables.begin(), tables.end(), w.first.table) != tables.end())) {
+			if (!cols.size() && (find(tables.begin(), tables.end(), w.first.table) == tables.end())) {
+				tables.push_back(w.first.table);
+			}
+
 			if (firstCol) {
 				cmdWhere = " WHERE ";
 				firstCol = false;
 			} else {
 				cmdWhere.append(" AND ");
 			}
-			cmdWhere.append(w.first.column + " = " + val);
+			cmdWhere.append(w.first.column + " = '" + replaceAll(w.second, "'", "''") + "'");
 		}
 	}
 
@@ -173,15 +176,15 @@ std::string Database::getTitle() const {
  *  \return An Article with values according to given ID
  */
 Article Database::getArticle(const std::string &id) const {
-	Log << "Requesting article with id '" << id << "'...";
+	Log << "Requesting article with id '" << id << "'..." << (Log.ENDL | Log.CONTINUE);
 
 	DataList rows = getColumns({}, {{ Column::ArticleID, replaceAll(id, "'", "''") }});
 
 	if (!rows.size()) {  // rows.size() == 0
-		Log << "No such article found" << Log.ENDL;
+		Log << Log.CONTINUE << "No such article found" << Log.ENDL;
 		return Article();
 	} else {
-		Log << "Found" << Log.ENDL;
+		Log << Log.CONTINUE << "Found" << Log.ENDL;
 		return Article(makeArticle(rows[0]));
 	}
 }

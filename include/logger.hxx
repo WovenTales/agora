@@ -22,6 +22,7 @@ class Logger {
 
 	bool &error;
 	bool &terminated;
+	bool &continued;
 
 	unsigned char &count;
 

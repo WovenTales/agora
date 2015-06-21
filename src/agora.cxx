@@ -1,12 +1,18 @@
 #include <agora.hxx>
 
+#include <article.hxx>
 #include <database.hxx>
 #include <feed.hxx>
-#include <ncursesui.hxx>
 
 
 int main(int argc, char *argv[]) {
-	NcursesUI ui(argv[1]);
+	Database db(argv[2]);
+	Feed f(argv[1]);
+	db.stage(f);
+	db.save();
+
+	Article a = db.getArticle("http://what-if.xkcd.com/135/");
+	a.print();
 }
 
 

@@ -2,7 +2,7 @@ FILES = agora article database feed logger ncursesdatabasepanel ncursespanel ncu
 
 LOGFILE = agora.log
 
-RUNCMD = $(BINDIR)/agora test.sqlite
+RUNCMD = $(BINDIR)/agora whatif.atom test.sqlite
 
 SRCDIR = src
 INCDIR = include
