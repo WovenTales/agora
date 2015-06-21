@@ -255,6 +255,7 @@ void Database::open(const std::string &filename) {
 	sqlite3_exec(db, "PRAGMA table_info(feeds)", (int (*)(void*, int, char**, char**))isEmpty, &init, NULL);
 
 	if (init) {
+		//! \todo Generate automatically.
 		string meta =     "CREATE TABLE meta     (title,"
 		                                         "version);"
 		                          "INSERT INTO meta (title, version) VALUES ('" + replaceAll(filename, "'", "''") + "', 2);";
@@ -324,6 +325,7 @@ void Database::stage(const Feed &f) {
 }
 
 
+//! \todo Update to use new Column::Name.
 void Database::save() {
 	Log << "Committing staged elements" << Log.ENDL;
 
@@ -367,10 +369,8 @@ void Database::save() {
 			vals += ",'" + summary + "'";
 		}
 		if (content.compare("")) {  // content != ""
-			//! \bug Trying to insert (or later update with) content results in command being ignored\n
-			//! When updated manually, get/makeArticle properly displays, so is likely buffer error of some sort
-			//cols += ", aContent";
-			//vals += ",'" + content + "'";
+			cols += ", aContent";
+			vals += ",'" + content + "'";
 		}
 
 		//! \todo Only update what's necessary rather than replacing everything

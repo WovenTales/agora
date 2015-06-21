@@ -134,7 +134,7 @@ void Article::parseRss(const xml_node &entry) {
 		link = id;
 	}
 
-	Log << "Completed parsing '" << title << "'";
+	Log << "Completed parsing '" << title << "'" << Log.ENDL;
 }
 
 
