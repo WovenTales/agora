@@ -21,7 +21,7 @@ class NcursesFeedPanel : public NcursesPanel {
 
 	virtual void fill();
 
-	void loadFeed(Database&, const std::string&);
+	void loadFeed(const Database&, const std::string&);
 };
 
 #endif

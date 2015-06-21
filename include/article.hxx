@@ -47,7 +47,7 @@ class Article {
 			const std::string& ="", const std::string& ="", const std::string& ="");
 	//! Standard destructor.
 	virtual ~Article();
-	
+
 	//! \return Author  
 	std::string getAuthor()     const { return author; };  
 	//! \return Content

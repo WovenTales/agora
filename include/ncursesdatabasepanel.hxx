@@ -23,7 +23,7 @@ class NcursesDatabasePanel : public NcursesPanel {
 
 	virtual void fill();
 
-	void loadDatabase(Database&);
+	void loadDatabase(const Database&);
 };
 
 #endif

@@ -38,15 +38,14 @@ void NcursesDatabasePanel::fill() {
 		mvwaddch(panel, h - 1, w - 1, ACS_DARROW);
 	}
 	for (int i = 0; i < s; ++i) {
-		mvwaddnstr(panel, i + 1, 2, replaceAll(data[activeTab][i]["fTitle"], "''", "'").c_str(), w - 3);
+		mvwaddnstr(panel, i + 1, 2, replaceAll(data[activeTab][i][Database::Column::FeedTitle], "''", "'").c_str(), w - 3);
 	}
 }
 
 
-void NcursesDatabasePanel::loadDatabase(Database &db) {
+void NcursesDatabasePanel::loadDatabase(const Database &db) {
 	tabs.push_back(db.getTitle());
 
-	Database::DataList *tmp = db.exec("SELECT fTitle FROM feeds;", 0);
-	data.push_back(*tmp);
-	delete tmp;
+	Database::DataList tmp = db.getColumns({ Database::Column::FeedTitle });
+	data.push_back(tmp);
 }
