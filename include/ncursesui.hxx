@@ -2,6 +2,7 @@
 #define NCURSESUI_H
 
 #include <database.hxx>
+class NcursesArticlePanel;
 class NcursesDatabasePanel;
 class NcursesFeedPanel;
 
@@ -12,14 +13,17 @@ class NcursesFeedPanel;
 
 
 //! \todo Smooth so don't take up more space than necessary (DVI shouldn't require resizing of panels).
-#define DBPANEL_WIDTH_ACTIVE    60
-#define DBPANEL_WIDTH_MINIMIZED std::max(20, std::min(COLS / 5, 60))
+#define DBPANEL_WIDTH_ACTIVE       60
+#define DBPANEL_WIDTH_MINIMIZED    std::max(20, std::min(COLS / 5, 60))
+#define FEEDPANEL_HEIGHT_ACTIVE    20
+#define FEEDPANEL_HEIGHT_MINIMIZED 10
 
 
 //! \todo Generates large amount of leaked memory.
 class NcursesUI {
   public:
 	enum Panel {
+		ArticlePanel,
 		DatabasePanel,
 		FeedPanel
 	};
@@ -34,6 +38,8 @@ class NcursesUI {
 	static NcursesUI              base;
 
 	static std::vector<Database>  db;
+
+	static NcursesArticlePanel   *articlePanel;
 	static NcursesDatabasePanel  *dbPanel;
 	static NcursesFeedPanel      *feedPanel;
 
@@ -48,8 +54,10 @@ class NcursesUI {
 
 	static Panel getFocus() { return focus; };
 
-	static void toggleFocus();
+	static void changeTab(bool);
+	static void setFocus(Panel);
 
+	static void openArticle(const std::string&);
 	static void openDatabase(const std::string&);
 	static void openDatabase(Database&);
 	static void openFeed(const std::string&);

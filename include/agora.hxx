@@ -4,6 +4,7 @@
 #include <pugixml.hpp>
 #include <string>
 #include <time.h>
+#include <vector>
 
 
 //! Wrapper for global utility functions.
@@ -22,6 +23,9 @@ namespace agora {
 	std::string parseAtomTitle(const pugi::xml_node&);
 	//! Parse variably-formatted string to standard time.
 	time_t parseTime(const std::string&);
+
+	//! Split a string into a vector using the given deliminator.
+	std::vector<std::string> splitString(const std::string&, char = '\n');
 }
 
 #endif

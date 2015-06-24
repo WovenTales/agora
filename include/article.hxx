@@ -53,7 +53,7 @@ class Article {
 	//! \return Content
 	std::string getContent()    const { return content; };
 	//! \return ID of parent feed
-	std::string getFID()        const;
+	std::string getFID()        const;  //Define in .cxx so don't need #include <feed.hxx> here
 	//! \return %Article ID
 	std::string getID()         const { return id; };
 	//! \return Link to original article

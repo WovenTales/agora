@@ -1,11 +1,9 @@
 #ifndef NCURSESDATABASEPANEL_H
 #define NCURSESDATABASEPANEL_H
 
-#include <database.hxx>
+class Database;
 #include <ncursespanel.hxx>
 #include <ncursesui.hxx>
-
-#include <vector>
 
 
 class NcursesDatabasePanel : public NcursesPanel {

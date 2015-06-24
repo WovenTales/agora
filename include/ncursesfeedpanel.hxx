@@ -1,7 +1,7 @@
 #ifndef NCURSESFEEDPANEL_H
 #define NCURSESFEEDPANEL_H
 
-#include <database.hxx>
+class Database;
 #include <ncursespanel.hxx>
 #include <ncursesui.hxx>
 

@@ -1,6 +1,7 @@
 #include <ncursesdatabasepanel.hxx>
 
 #include <agora.hxx>
+#include <database.hxx>
 
 #include <curses.h>
 
@@ -9,7 +10,7 @@ using namespace std;
 
 
 int NcursesDatabasePanel::height() {
-	return 0;
+	return LINES;
 }
 
 int NcursesDatabasePanel::width() {
@@ -27,18 +28,16 @@ int NcursesDatabasePanel::y() {
 
 void NcursesDatabasePanel::fill() {
 	int s = data[activeTab].size();
-	int h = (height() == 0 ? LINES : height());
-	int w = (width() == 0 ? COLS : width());
 
 	//! \todo Implement scrollable list.
-	if (s > h - 2) {
-		s = h - 2;
+	if (s > height() - 2) {
+		s = height() - 2;
 		//! \todo Could definitely look better.
-		mvwaddch(panel, h - 2, w - 1, ACS_UARROW);
-		mvwaddch(panel, h - 1, w - 1, ACS_DARROW);
+		mvwaddch(panel, height() - 2, width() - 1, ACS_UARROW);
+		mvwaddch(panel, height() - 1, width() - 1, ACS_DARROW);
 	}
 	for (int i = 0; i < s; ++i) {
-		mvwaddnstr(panel, i + 1, 2, replaceAll(data[activeTab][i][Database::Column::FeedTitle], "''", "'").c_str(), w - 3);
+		mvwaddnstr(panel, i + 1, 2, data[activeTab][i][Database::Column::FeedTitle].c_str(), width() - 3);
 	}
 }
 
@@ -48,4 +47,6 @@ void NcursesDatabasePanel::loadDatabase(const Database &db) {
 
 	Database::DataList tmp = db.getColumns({ Database::Column::FeedTitle });
 	data.push_back(tmp);
+
+	++activeTab;
 }

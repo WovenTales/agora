@@ -37,6 +37,8 @@ class NcursesPanel {
 
 	unsigned char getActiveTab() { return activeTab; };
 
+	void changeTab(bool);
+
 	void draw();
 	virtual void fill() =0;
 	void update();
