@@ -1,11 +1,9 @@
 #include <ncursesfeedpanel.hxx>
 
-#include <agora.hxx>
 #include <database.hxx>
+#include <ncursesui.hxx>
 
 #include <curses.h>
-
-using namespace agora;
 
 
 int NcursesFeedPanel::height() {
@@ -17,27 +15,11 @@ int NcursesFeedPanel::width() {
 }
 
 int NcursesFeedPanel::x() {
-	return (NcursesUI::getFocus() == NcursesUI::DatabasePanel ? DBPANEL_WIDTH_ACTIVE : DBPANEL_WIDTH_MINIMIZED);
+	return (NcursesUI::getFocus() == Panel::DatabasePanel ? DBPANEL_WIDTH_ACTIVE : DBPANEL_WIDTH_MINIMIZED);
 }
 
 int NcursesFeedPanel::y() {
 	return 0;
-}
-
-
-void NcursesFeedPanel::fill() {
-	int s = data[activeTab].size();
-
-	//! \todo Implement scrollable list.
-	if (s > height() - 2) {
-		s = height() - 2;
-		//! \todo Could definitely look better.
-		mvwaddch(panel, height() - 2, width() - 1, ACS_UARROW);
-		mvwaddch(panel, height() - 1, width() - 1, ACS_DARROW);
-	}
-	for (int i = 0; i < s; ++i) {
-		mvwaddnstr(panel, i + 1, 2, data[activeTab][i][Database::Column::ArticleTitle].c_str(), width() - 3);
-	}
 }
 
 

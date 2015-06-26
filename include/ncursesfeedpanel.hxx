@@ -1,15 +1,17 @@
 #ifndef NCURSESFEEDPANEL_H
 #define NCURSESFEEDPANEL_H
 
-class Database;
+#include <database.hxx>
 #include <ncursespanel.hxx>
-#include <ncursesui.hxx>
+
+#include <string>
 
 
 class NcursesFeedPanel : public NcursesPanel {
   private:
-	virtual std::string      name()  { return "feed"; };
-	virtual NcursesUI::Panel indic() { return NcursesUI::FeedPanel; };
+	virtual std::string            name()  { return "feed"; };
+	virtual Panel                  indic() { return Panel::FeedPanel; };
+	virtual Database::Column::Name line()  { return Database::Column::ArticleTitle; };
 
   public:
 	NcursesFeedPanel(bool max = false) : NcursesPanel(max) { update(); } ;
@@ -18,8 +20,6 @@ class NcursesFeedPanel : public NcursesPanel {
 	virtual inline int width();
 	virtual inline int x();
 	virtual inline int y();
-
-	virtual void fill();
 
 	void loadFeed(const Database&, const std::string&);
 };

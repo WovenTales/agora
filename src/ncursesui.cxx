@@ -1,7 +1,6 @@
 #include <ncursesui.hxx>
 
 #include <logger.hxx>
-#include <ncursespanel.hxx>
 #include <ncursesarticlepanel.hxx>
 #include <ncursesdatabasepanel.hxx>
 #include <ncursesfeedpanel.hxx>
@@ -15,7 +14,7 @@ NcursesUI              NcursesUI::base(0);
 
 std::vector<Database>  NcursesUI::db;
 
-NcursesUI::Panel       NcursesUI::focus        = NcursesUI::DatabasePanel;
+NcursesPanel::Panel    NcursesUI::focus        = NcursesPanel::Panel::DatabasePanel;
 NcursesArticlePanel   *NcursesUI::articlePanel = NULL;
 NcursesDatabasePanel  *NcursesUI::dbPanel      = NULL;
 NcursesFeedPanel      *NcursesUI::feedPanel    = NULL;
@@ -49,18 +48,14 @@ NcursesUI::NcursesUI(const std::string &filename) {
 	bool loop = true;
 	while (loop) {
 		switch (getch()) {
-			case 'a' : setFocus(ArticlePanel);
-			           break;
-			case 'd' : setFocus(DatabasePanel);
-			           break;
-			case 'f' : setFocus(FeedPanel);
-			           break;
-			case 'h' : changeTab(false);
-			           break;
-			case 'l' : changeTab(true);
-			           break;
-			case 'q' : loop = false;
-			           break;
+			case 'a' : setFocus(NcursesPanel::Panel::ArticlePanel);  break;
+			case 'd' : setFocus(NcursesPanel::Panel::DatabasePanel); break;
+			case 'f' : setFocus(NcursesPanel::Panel::FeedPanel);     break;
+			case 'h' : changeTab(false);                             break;
+			case 'j' : scrollTab(true);                              break;
+			case 'k' : scrollTab(false);                             break;
+			case 'l' : changeTab(true);                              break;
+			case 'q' : loop = false;                                 break;
 		}
 	}
 }
@@ -70,23 +65,16 @@ NcursesUI::~NcursesUI() {
 }
 
 
-void NcursesUI::changeTab(bool right) {
-	Panel f = getFocus();
-
-	NcursesPanel *p;
-	if (f == ArticlePanel) {
-		p = articlePanel;
-	} else if (f == DatabasePanel) {
-		p = dbPanel;
-	} else if (f == FeedPanel) {
-		p = feedPanel;
-	}
-
-	p->changeTab(right);
+NcursesPanel *NcursesUI::activePanel() {
+	NcursesPanel::Panel f = getFocus();
+	     if (f == NcursesPanel::Panel::ArticlePanel)  return articlePanel;
+	else if (f == NcursesPanel::Panel::DatabasePanel) return dbPanel;
+	else if (f == NcursesPanel::Panel::FeedPanel)     return feedPanel;
 }
 
+
 //! \todo Winds up recreating panels every time called; find way to optimize.
-void NcursesUI::setFocus(Panel f) {
+void NcursesUI::setFocus(NcursesPanel::Panel f) {
 	if (focus != f) {
 		focus = f;
 

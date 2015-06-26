@@ -1,6 +1,7 @@
 #ifndef NCURSESARTICLEPANEL_H
 #define NCURSESARTICLEPANEL_H
 
+#include <database.hxx>
 #include <ncursespanel.hxx>
 
 #include <string>
@@ -11,8 +12,9 @@ class NcursesArticlePanel : public NcursesPanel {
   private:
 	std::vector<std::string> content;
 
-	virtual std::string      name()  { return "article"; };
-	virtual NcursesUI::Panel indic() { return NcursesUI::ArticlePanel; };
+	virtual std::string            name()  { return "article"; };
+	virtual Panel                  indic() { return Panel::ArticlePanel; };
+	virtual Database::Column::Name line()  { return Database::Column::ArticleContent; };
 
   public:
 	NcursesArticlePanel(bool max = false) : NcursesPanel(max) { update(); } ;

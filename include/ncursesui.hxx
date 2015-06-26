@@ -5,6 +5,7 @@
 class NcursesArticlePanel;
 class NcursesDatabasePanel;
 class NcursesFeedPanel;
+#include <ncursespanel.hxx>
 
 #include <curses.h>
 #include <math.h>
@@ -12,22 +13,8 @@ class NcursesFeedPanel;
 #include <vector>
 
 
-//! \todo Smooth so don't take up more space than necessary (DVI shouldn't require resizing of panels).
-#define DBPANEL_WIDTH_ACTIVE       60
-#define DBPANEL_WIDTH_MINIMIZED    std::max(20, std::min(COLS / 5, 60))
-#define FEEDPANEL_HEIGHT_ACTIVE    20
-#define FEEDPANEL_HEIGHT_MINIMIZED 10
-
-
 //! \todo Generates large amount of leaked memory.
 class NcursesUI {
-  public:
-	enum Panel {
-		ArticlePanel,
-		DatabasePanel,
-		FeedPanel
-	};
-
   private:
 	//! Allow static singleton without always initing blank window.
 	NcursesUI(int) {};
@@ -43,19 +30,22 @@ class NcursesUI {
 	static NcursesDatabasePanel  *dbPanel;
 	static NcursesFeedPanel      *feedPanel;
 
-	static Panel focus;
+	static NcursesPanel::Panel focus;
+
+	static NcursesPanel *activePanel();
 
 	static void close();
 
   public:
-  	//! \todo Allow startup without active database.
+	//! \todo Allow startup without active database.
 	NcursesUI(const std::string& = std::string(""));
 	virtual ~NcursesUI();
 
-	static Panel getFocus() { return focus; };
+	static NcursesPanel::Panel getFocus() { return focus; };
 
-	static void changeTab(bool);
-	static void setFocus(Panel);
+	static void changeTab(bool right) { activePanel()->changeTab(right); };
+	static void scrollTab(bool down) { activePanel()->scrollTab(down); };
+	static void setFocus(NcursesPanel::Panel);
 
 	static void openArticle(const std::string&);
 	static void openDatabase(const std::string&);

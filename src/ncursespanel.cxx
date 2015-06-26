@@ -1,6 +1,7 @@
 #include <ncursespanel.hxx>
 
 #include <logger.hxx>
+#include <ncursesui.hxx>
 #include <string>
 
 using namespace std;
@@ -23,20 +24,40 @@ NcursesPanel::~NcursesPanel() {
 
 //! \bug Doesn't properly clear old render of previous tab.
 void NcursesPanel::changeTab(bool right) {
-	int t = tabs.size();
+	int t = tabs.size() - 1;
 
 	if (!t) {
 		return;
 	}
 
-	if (right && (activeTab < t - 1)) {
-		++activeTab;
-	} else if (right) {
+	if (right && (activeTab == t)) {
 		activeTab = 0;
-	} else if (!right && (activeTab > 0)) {
-		--activeTab;
+	} else if (right) {
+		++activeTab;
+	} else if (!right && (activeTab == 0)) {
+		activeTab = t;
 	} else if (!right) {
-		activeTab = t - 1;
+		--activeTab;
+	}
+
+	NcursesUI::draw();
+}
+
+void NcursesPanel::scrollTab(bool down) {
+	int d = data.size() - 1;
+
+	if (!d) {
+		return;
+	}
+
+	if (down && (activeData == d)) {
+		activeData = 0;
+	} else if (down) {
+		++activeData;
+	} else if (!down && (activeData == 0)) {
+		activeData = d;
+	} else if (!down) {
+		--activeData;
 	}
 
 	NcursesUI::draw();
@@ -85,6 +106,21 @@ void NcursesPanel::draw() {
 
 	Log << "Completed" << Log.ENDL;
 	wrefresh(panel);
+}
+
+void NcursesPanel::fill() {
+	int s = data[activeTab].size();
+
+	//! \todo Implement scrollable list.
+	if (s > height() - 2) {
+		s = height() - 2;
+		//! \todo Could definitely look better.
+		mvwaddch(panel, height() - 2, width() - 1, ACS_UARROW);
+		mvwaddch(panel, height() - 1, width() - 1, ACS_DARROW);
+	}
+	for (int i = 0; i < s; ++i) {
+		mvwaddnstr(panel, i + 1, 2, data[activeTab][i][line()].c_str(), width() - 3);
+	}
 }
 
 void NcursesPanel::update() {

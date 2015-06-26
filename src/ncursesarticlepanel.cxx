@@ -3,7 +3,7 @@
 #include <agora.hxx>
 #include <article.hxx>
 #include <database.hxx>
-#include <logger.hxx>
+#include <ncursesui.hxx>
 
 #include <curses.h>
 
@@ -12,7 +12,7 @@ using namespace std;
 
 
 int NcursesArticlePanel::height() {
-	return LINES - y(); 
+	return LINES - y();
 }
 
 int NcursesArticlePanel::width() {
@@ -20,11 +20,11 @@ int NcursesArticlePanel::width() {
 }
 
 int NcursesArticlePanel::x() {
-	return (NcursesUI::getFocus() == NcursesUI::DatabasePanel ? DBPANEL_WIDTH_ACTIVE : DBPANEL_WIDTH_MINIMIZED);
+	return (NcursesUI::getFocus() == Panel::DatabasePanel ? DBPANEL_WIDTH_ACTIVE : DBPANEL_WIDTH_MINIMIZED);
 }
 
 int NcursesArticlePanel::y() {
-	return (NcursesUI::getFocus() == NcursesUI::FeedPanel ? FEEDPANEL_HEIGHT_ACTIVE : FEEDPANEL_HEIGHT_MINIMIZED);
+	return (NcursesUI::getFocus() == Panel::FeedPanel ? FEEDPANEL_HEIGHT_ACTIVE : FEEDPANEL_HEIGHT_MINIMIZED);
 }
 
 
