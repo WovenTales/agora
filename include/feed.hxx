@@ -3,7 +3,6 @@
 
 #include <agora.hxx>
 
-#include <map>
 #include <pugixml.hpp>
 #include <string>
 #include <time.h>

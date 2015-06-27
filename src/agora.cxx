@@ -4,6 +4,8 @@
 #include <database.hxx>
 #include <feed.hxx>
 
+#include <sstream>
+
 
 int main(int argc, char *argv[]) {
 	Database db(argv[2]);
@@ -55,4 +57,19 @@ std::string agora::replaceAll(std::string str, const std::string &f, const std::
 		pos += r.length();
 	}
 	return str;
+}
+
+
+std::vector<std::string> agora::splitString(const std::string &in, char d) {
+	std::vector<std::string> out;
+
+	std::istringstream s(in);
+	std::string line;
+	while (std::getline(s, line, d)) {
+		if (!line.empty()) {
+			out.push_back(line);
+		}
+	}
+
+	return out;
 }
