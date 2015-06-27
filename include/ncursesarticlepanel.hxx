@@ -8,7 +8,7 @@
 #include <vector>
 
 
-class NcursesArticlePanel : public NcursesBasePanel<Database::Table::Article> {
+class NcursesArticlePanel : public NcursesListPanel<Database::Table::Article> {
   private:
 	std::vector<std::string> content;
 
@@ -17,7 +17,7 @@ class NcursesArticlePanel : public NcursesBasePanel<Database::Table::Article> {
 	virtual Database::Table::Article line()  { return Database::Table::Article::Content; };
 
   public:
-	NcursesArticlePanel(bool focus = false) : NcursesBasePanel(focus) { update(focus); } ;
+	NcursesArticlePanel(bool focus = false) : NcursesListPanel(focus) { update(); } ;
 
 	virtual inline int height();
 	virtual inline int width();

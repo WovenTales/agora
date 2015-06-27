@@ -43,8 +43,8 @@ class NcursesUI {
 
 	static NcursesPanel::Panel getFocus() { return focus; };
 
-	static void changeTab(bool right) { activePanel()->changeTab(right); draw(); };
-	static void scrollTab(bool down) { activePanel()->scrollTab(down); draw(); };
+	static void changeTab(bool right) { if (activePanel()->changeTab(right)) draw(); };
+	static void scrollTab(bool down) { if (activePanel()->scrollTab(down)) draw(); };
 	static void setFocus(NcursesPanel::Panel);
 
 	static void openArticle(const std::string&);

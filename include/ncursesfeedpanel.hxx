@@ -7,14 +7,14 @@
 #include <string>
 
 
-class NcursesFeedPanel : public NcursesBasePanel<Database::Table::Article> {
+class NcursesFeedPanel : public NcursesListPanel<Database::Table::Article> {
   private:
 	virtual std::string              name()  { return "feed"; };
 	virtual Panel                    indic() { return Panel::FeedPanel; };
 	virtual Database::Table::Article line()  { return Database::Table::Article::Title; };
 
   public:
-	NcursesFeedPanel(bool focus = false) : NcursesBasePanel(focus) { update(focus); } ;
+	NcursesFeedPanel(bool focus = false) : NcursesListPanel(focus) { update(); } ;
 
 	virtual int height();
 	virtual int width();

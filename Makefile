@@ -1,5 +1,5 @@
-FILES   = agora article database feed logger ncursesarticlepanel ncursesdatabasepanel ncursesfeedpanel ncursesui
-INCONLY = ncursespanel
+FILES   = agora article database feed logger ncursesarticlepanel ncursesdatabasepanel ncursesfeedpanel ncursespanel ncursesui
+INCONLY =
 
 LOGFILE = agora.log
 

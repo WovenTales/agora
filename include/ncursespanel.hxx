@@ -24,42 +24,20 @@ class NcursesPanel {
 		FeedPanel
 	};
 
-	virtual int height() =0;
-	virtual int width() =0;
-	virtual int x() =0;
-	virtual int y() =0;
-
-	virtual unsigned char getActiveTab() =0;
-
-	virtual void changeTab(bool) =0;
-	virtual void scrollTab(bool) =0;
-
-	virtual void draw() =0;
-	virtual void update(bool) =0;
-};
-
-template <typename T>
-class NcursesBasePanel : public NcursesPanel {
   protected:
-	NcursesBasePanel(const NcursesPanel&);
-	NcursesBasePanel &operator=(const NcursesPanel&);
-
 	WINDOW                              *panel;
 	std::vector<std::string>             tabs;
-	std::vector<Database::DataList<T> >  data;
 
 	unsigned char activeTab;
-	unsigned char activeData;
-
 	bool expanded;
 
 	virtual std::string name() =0;
 	virtual Panel       indic() =0;
-	virtual T           line() =0;
-
-	void update(const std::string&, Panel);
 
   public:
+	NcursesPanel(bool = false);
+	virtual ~NcursesPanel();
+
 	virtual int height() =0;
 	virtual int width() =0;
 	virtual int x() =0;
@@ -67,6 +45,30 @@ class NcursesBasePanel : public NcursesPanel {
 
 	unsigned char getActiveTab() { return activeTab; };
 
+	bool changeTab(bool);
+	virtual bool scrollTab(bool) =0;
+
+	virtual void draw();
+	virtual void fill() =0;
+	void update();
+};
+
+template <typename T>
+class NcursesListPanel : public NcursesPanel {
+  protected:
+	std::vector<Database::DataList<T> >  data;
+
+	unsigned char activeData;
+
+	virtual T           line() =0;
+
+	//void update(const std::string&, Panel);
+
+/* public:
+ * NcursesListPanel(bool = false);
+ * virtual bool scrollTab(bool);
+ * virtual void fill();
+ */
 #include <ncursespanel.tcc>
 };
 
