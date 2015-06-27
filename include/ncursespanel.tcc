@@ -1,20 +1,15 @@
-#include <ncursespanel.hxx>
+// Included in namespace NcursesBasePanel
 
-#include <logger.hxx>
-#include <ncursesui.hxx>
-#include <string>
+public:
 
-using namespace std;
-
-
-NcursesPanel::NcursesPanel(bool max) : tabs(), data() {
+NcursesBasePanel(bool focus = false) : tabs(), data() {
 	panel = NULL;
 	activeTab = -1;
 	activeData = 0;
-	expanded = !max;
+	expanded = focus;
 }
 
-NcursesPanel::~NcursesPanel() {
+virtual ~NcursesBasePanel() {
 	if (panel) {
 		delwin(panel);
 		panel = NULL;
@@ -23,7 +18,7 @@ NcursesPanel::~NcursesPanel() {
 
 
 //! \bug Doesn't properly clear old render of previous tab.
-void NcursesPanel::changeTab(bool right) {
+void changeTab(bool right) {
 	int t = tabs.size() - 1;
 
 	if (!t) {
@@ -39,11 +34,10 @@ void NcursesPanel::changeTab(bool right) {
 	} else if (!right) {
 		--activeTab;
 	}
-
-	NcursesUI::draw();
 }
 
-void NcursesPanel::scrollTab(bool down) {
+//! \todo Integrate into fill().
+virtual void scrollTab(bool down) {
 	int d = data.size() - 1;
 
 	if (!d) {
@@ -59,12 +53,10 @@ void NcursesPanel::scrollTab(bool down) {
 	} else if (!down) {
 		--activeData;
 	}
-
-	NcursesUI::draw();
 }
 
 
-void NcursesPanel::draw() {
+void draw() {
 	Log << "Drawing " << name() << " panel...";
 
 	box(panel, 0, 0);
@@ -108,7 +100,7 @@ void NcursesPanel::draw() {
 	wrefresh(panel);
 }
 
-void NcursesPanel::fill() {
+virtual void fill() {
 	int s = data[activeTab].size();
 
 	//! \todo Implement scrollable list.
@@ -123,12 +115,14 @@ void NcursesPanel::fill() {
 	}
 }
 
-void NcursesPanel::update() {
+void update(bool focus) {
 	Log << "Updating " << name() << " panel" << Log.ENDL;
 	if (panel) {
 		delwin(panel);
 	}
 
-	expanded = (NcursesUI::getFocus() == indic());
+	//! \todo Figure out how to restore this functionality here, rather than pushing test upstream.
+	//expanded = (NcursesUI::getFocus() == indic());
+	expanded = focus;
 	panel = newwin(height(), width(), y(), x());
 }

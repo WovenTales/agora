@@ -1,4 +1,5 @@
-FILES = agora article database feed logger ncursesarticlepanel ncursesdatabasepanel ncursesfeedpanel ncursespanel ncursesui
+FILES   = agora article database feed logger ncursesarticlepanel ncursesdatabasepanel ncursesfeedpanel ncursesui
+INCONLY = ncursespanel
 
 LOGFILE = agora.log
 
@@ -15,7 +16,7 @@ INCLUDE = -I./$(INCDIR) -lpugixml -lsqlite3 -lncurses
 FLAGS = $(DEFINE) $(INCLUDE) --std=c++11
 
 SOURCES = $(FILES:%=$(SRCDIR)/%.cxx)
-HEADERS = $(FILES:%=$(INCDIR)/%.hxx) $(addprefix $(INCDIR)/,logger.tcc)
+HEADERS = $(FILES:%=$(INCDIR)/%.hxx) $(INCONLY:%=$(INCDIR)/%.hxx) $(addprefix $(INCDIR)/,database.tcc logger.tcc ncursespanel.tcc)
 OBJECTS = $(FILES:%=$(OBJDIR)/%.o)
 DEPENDS = $(FILES:%=$(OBJDIR)/%.d)
 
@@ -53,7 +54,6 @@ $(OBJDIR):
 	mkdir $(OBJDIR)
 $(BINDIR):
 	mkdir $(BINDIR)
-
 
 $(OBJDIR)/%.o: $(SRCDIR)/%.cxx
 	g++ -o $@ -c $< -MMD $(FLAGS)

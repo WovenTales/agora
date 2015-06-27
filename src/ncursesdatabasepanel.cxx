@@ -29,7 +29,7 @@ int NcursesDatabasePanel::y() {
 void NcursesDatabasePanel::loadDatabase(const Database &db) {
 	tabs.push_back(db.getTitle());
 
-	Database::DataList tmp = db.getColumns({ Database::Column::FeedTitle, Database::Column::FeedID });
+	Database::FeedDataList tmp = db.getColumns<Database::Table::Feed>({ Database::Table::Feed::Title, Database::Table::Feed::ID });
 	data.push_back(tmp);
 
 	++activeTab;

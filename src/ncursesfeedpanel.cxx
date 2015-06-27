@@ -24,10 +24,10 @@ int NcursesFeedPanel::y() {
 
 
 void NcursesFeedPanel::loadFeed(const Database &db, const std::string &fID) {
-	Database::DataList t = db.getColumns({ Database::Column::FeedTitle }, {{ Database::Column::FeedID, fID }});
-	Database::DataList a = db.getColumns({ Database::Column::ArticleTitle }, {{ Database::Column::FeedID, fID }});
+	Database::FeedDataList t = db.getColumns<Database::Table::Feed>({ Database::Table::Feed::Title }, {{ Database::Table::Feed::ID, fID }});
+	Database::ArticleDataList a = db.getColumns<Database::Table::Article>({ Database::Table::Article::Title }, {{ Database::Table::Article::FeedID, fID }});
 
-	tabs.push_back(t[0][Database::Column::FeedTitle]);
+	tabs.push_back(t[0][Database::Table::Feed::Title]);
 	data.push_back(a);
 
 	++activeTab;

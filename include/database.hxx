@@ -1,13 +1,18 @@
 #ifndef DATABASE_H
 #define DATABASE_H
 
+#include <agora.hxx>
 class Article;
 class Feed;
+#include <logger.hxx>
 
+#include <algorithm>
 #include <initializer_list>
+#include <map>
 #include <queue>
 #include <sqlite3.h>
 #include <string>
+#include <typeinfo>
 #include <unordered_map>
 #include <utility>
 #include <vector>
@@ -18,55 +23,83 @@ class Feed;
 //! \todo Public \c exec exposes too much control; encapsulate with safer get methods.
 class Database {
   public:
-	struct Column {
-	  private:
-		struct Name {
-			Name(const std::string &t, const std::string &c) { table = t; column = c; };
-
-			std::string table;
-			std::string column;
-
-			struct Hash {
-				std::size_t operator()(const Name &n) const {
-					return (std::hash<std::string>()(n.table) ^ (std::hash<std::string>()(n.column) << 1));
-				};
-			};
-			bool operator==(const Name &r) const {
-				return ((table == r.table) && (column == r.column));
-			}
-		};
-		friend Database;
-
+	struct Table {
 	  public:
-		static Name DBTitle;
-		static Name DBVersion;
+		friend class Database;
 
-		static Name ArticleID;
-		static Name ArticleTitle;
-		static Name ArticleUpdated;
-		static Name ArticleLink;
-		static Name ArticleAuthor;
-		static Name ArticleSummary;
-		static Name ArticleContent;
+		enum struct Article {
+			ID,
+			FeedID,
+			Title,
+			Updated,
+			Link,
+			Author,
+			Summary,
+			Content
+		};
+		static std::string column(Article);
+		static std::string table(Article) { return "articles"; };
 
-		static Name FeedID;
-		static Name FeedTitle;
-		static Name FeedLink;
-		static Name FeedAuthor;
-		static Name FeedDescription;
+		enum struct Feed {
+			ID,
+			Title,
+			Link,
+			Author,
+			Description
+		};
+		static std::string column(Feed);
+		static std::string table(Feed) { return "feeds"; };
 
-		static Name parse(const std::string&);
+		enum struct Meta {
+			Title,
+			Version
+		};
+		static std::string column(Meta);
+		static std::string table(Meta) { return "meta"; };
+
+		template <typename T> using Unified = T;
+
+	  private:
+		template <typename T>
+		struct table_less {
+			bool operator() (T a, T b) const { return (int(a) < int(b)); };
+		};
+		template < typename T,
+			   typename MAPPED_TYPE,
+			   typename ALLOCATOR_TYPE = std::allocator<std::pair<const T, MAPPED_TYPE> > >
+		using table_map = std::map<T, MAPPED_TYPE, table_less<T>, ALLOCATOR_TYPE>;
+
+		template <typename T>
+		struct table_hash_eq {
+			std::size_t operator() (T a) const { return std::hash<int>()(int(a)); };
+			bool operator() (T a, T b) const { return (int(a) == int(b)); };
+		};
+		template < typename T,
+			   typename MAPPED_TYPE,
+			   typename ALLOCATOR_TYPE = std::allocator<std::pair<const T, MAPPED_TYPE> > >
+		using table_hash_map = std::unordered_map<T, MAPPED_TYPE, table_hash_eq<T>, table_hash_eq<T>, ALLOCATOR_TYPE>;
 	};
 
-	//! Mappings of (columnName) -> (data), representing a lower-level representation of an Article.
-	//! \todo Make enum or similar out of column names, so don't have to worry about exact implementation
-	typedef typename std::unordered_map<Column::Name, std::string, Column::Name::Hash> Data;
-	typedef typename std::vector<Data> DataList;
+	//! Mappings of (columnName) -> (data), representing a lower-level representation of a returned database query
+	template <typename T> using Data     = Table::table_hash_map<Table::Unified<T>, std::string>;
+	template <typename T> using DataList = std::vector<Data<T> >;
+
+	typedef Data<Table::Article> ArticleData;
+	typedef Data<Table::Feed>    FeedData;
+	typedef Data<Table::Meta>    MetaData;
+
+	typedef DataList<Table::Article> ArticleDataList;
+	typedef DataList<Table::Meta>    MetaDataList;
+	typedef DataList<Table::Feed>    FeedDataList;
 
   private:
 	Database &operator--();
 
 	sqlite3 *db;
+
+	static const Data<Table::Article> ArticleColumnName;
+	static const Data<Table::Meta>    MetaColumnName;
+	static const Data<Table::Feed>    FeedColumnName;
 
 	std::queue<const Feed*> feedStage;
 	std::queue<const Article*> articleStage;
@@ -80,7 +113,6 @@ class Database {
 	void exec(const std::string&);
 
 	// For use in sqlite3_exec() calls
-	static int getEntries(std::vector<Data>*, int, char*[], char*[]);
 	static int isEmpty(bool*, int, char*[], char*[]);
 
   public:
@@ -96,16 +128,13 @@ class Database {
 	//! Standard assignment operator.
 	Database &operator=(const Database&);
 
-	//! Lookup specifed columns in database.
-	DataList getColumns(const std::initializer_list<Column::Name>&,
-	                    const std::initializer_list<std::pair<Column::Name, std::string> >& = {}) const;
 	//! Get title assigned to database.
 	std::string getTitle() const;
 
 	//! Request an Article by ID.
 	Article        getArticle(const std::string&) const;
 	//! Create Article from given data.
-	static Article makeArticle(const Data&);
+	static Article makeArticle(const ArticleData&);
 
 	//! Open specified database file.
 	void open(const std::string&);

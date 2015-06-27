@@ -82,10 +82,10 @@ void NcursesArticlePanel::fill() {
 
 
 void NcursesArticlePanel::loadArticle(const Database &db, const std::string &aID) {
-	Database::DataList t = db.getColumns({ Database::Column::ArticleTitle }, {{ Database::Column::ArticleID, aID }});
+	Database::ArticleDataList t = db.getColumns<Database::Table::Article>({ Database::Table::Article::Title }, {{ Database::Table::Article::ID, aID }});
 
 	if (t.size()) {
-		tabs.push_back(t[0][Database::Column::ArticleTitle]);
+		tabs.push_back(t[0][Database::Table::Article::Title]);
 		content = splitString(db.getArticle(aID).getContent());
 
 		++activeTab;

@@ -7,19 +7,19 @@
 #include <string>
 
 
-class NcursesFeedPanel : public NcursesPanel {
+class NcursesFeedPanel : public NcursesBasePanel<Database::Table::Article> {
   private:
-	virtual std::string            name()  { return "feed"; };
-	virtual Panel                  indic() { return Panel::FeedPanel; };
-	virtual Database::Column::Name line()  { return Database::Column::ArticleTitle; };
+	virtual std::string              name()  { return "feed"; };
+	virtual Panel                    indic() { return Panel::FeedPanel; };
+	virtual Database::Table::Article line()  { return Database::Table::Article::Title; };
 
   public:
-	NcursesFeedPanel(bool max = false) : NcursesPanel(max) { update(); } ;
+	NcursesFeedPanel(bool focus = false) : NcursesBasePanel(focus) { update(focus); } ;
 
-	virtual inline int height();
-	virtual inline int width();
-	virtual inline int x();
-	virtual inline int y();
+	virtual int height();
+	virtual int width();
+	virtual int x();
+	virtual int y();
 
 	void loadFeed(const Database&, const std::string&);
 };

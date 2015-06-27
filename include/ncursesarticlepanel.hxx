@@ -8,16 +8,16 @@
 #include <vector>
 
 
-class NcursesArticlePanel : public NcursesPanel {
+class NcursesArticlePanel : public NcursesBasePanel<Database::Table::Article> {
   private:
 	std::vector<std::string> content;
 
-	virtual std::string            name()  { return "article"; };
-	virtual Panel                  indic() { return Panel::ArticlePanel; };
-	virtual Database::Column::Name line()  { return Database::Column::ArticleContent; };
+	virtual std::string              name()  { return "article"; };
+	virtual Panel                    indic() { return Panel::ArticlePanel; };
+	virtual Database::Table::Article line()  { return Database::Table::Article::Content; };
 
   public:
-	NcursesArticlePanel(bool max = false) : NcursesPanel(max) { update(); } ;
+	NcursesArticlePanel(bool focus = false) : NcursesBasePanel(focus) { update(focus); } ;
 
 	virtual inline int height();
 	virtual inline int width();

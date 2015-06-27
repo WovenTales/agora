@@ -78,9 +78,9 @@ void NcursesUI::setFocus(NcursesPanel::Panel f) {
 	if (focus != f) {
 		focus = f;
 
-		articlePanel->update();
-		dbPanel->update();
-		feedPanel->update();
+		articlePanel->update(f == NcursesPanel::Panel::ArticlePanel);
+		dbPanel->update(f == NcursesPanel::Panel::DatabasePanel);
+		feedPanel->update(f == NcursesPanel::Panel::FeedPanel);
 	}
 
 	draw();
