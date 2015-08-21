@@ -2,7 +2,7 @@
 #define NCURSESARTICLEPANEL_H
 
 #include <database.hxx>
-#include <ncursespanel.hxx>
+#include <ui/ncurses/panelbase.hxx>
 
 #include <string>
 #include <vector>

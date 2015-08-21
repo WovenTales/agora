@@ -10,6 +10,7 @@
 
 
 //! \todo Smooth so don't take up more space than necessary (DVI shouldn't require resizing of panels).
+//! \todo Rework as part of Panel classes rather than (harder-to-manage) defines
 #define DBPANEL_WIDTH_ACTIVE       60
 #define DBPANEL_WIDTH_MINIMIZED    std::max(20, std::min(COLS / 5, 60))
 #define FEEDPANEL_HEIGHT_ACTIVE    20
@@ -25,8 +26,8 @@ class NcursesPanel {
 	};
 
   protected:
-	WINDOW                              *panel;
-	std::vector<std::string>             tabs;
+	WINDOW                   *panel;
+	std::vector<std::string>  tabs;
 
 	unsigned char activeTab;
 	bool expanded;
@@ -69,7 +70,7 @@ class NcursesListPanel : public NcursesPanel {
  * virtual bool scrollTab(bool);
  * virtual void fill();
  */
-#include <ncursespanel.tcc>
+#include <ui/ncurses/panelbase.tcc>
 };
 
 #endif

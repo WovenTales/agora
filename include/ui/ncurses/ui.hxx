@@ -5,7 +5,7 @@
 class NcursesArticlePanel;
 class NcursesDatabasePanel;
 class NcursesFeedPanel;
-#include <ncursespanel.hxx>
+#include <ui/ncurses/panelbase.hxx>
 
 #include <curses.h>
 #include <math.h>

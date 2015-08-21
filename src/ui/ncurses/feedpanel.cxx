@@ -1,7 +1,7 @@
-#include <ncursesfeedpanel.hxx>
+#include <ui/ncurses/feedpanel.hxx>
 
 #include <database.hxx>
-#include <ncursesui.hxx>
+#include <ui/ncurses/ui.hxx>
 
 #include <curses.h>
 

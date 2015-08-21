@@ -1,9 +1,9 @@
-#include <ncursesui.hxx>
+#include <ui/ncurses/ui.hxx>
 
 #include <logger.hxx>
-#include <ncursesarticlepanel.hxx>
-#include <ncursesdatabasepanel.hxx>
-#include <ncursesfeedpanel.hxx>
+#include <ui/ncurses/articlepanel.hxx>
+#include <ui/ncurses/databasepanel.hxx>
+#include <ui/ncurses/feedpanel.hxx>
 
 #include <curses.h>
 
@@ -121,7 +121,6 @@ void NcursesUI::close() {
 }
 
 void NcursesUI::draw() {
-	clear();
 	refresh();
 
 	articlePanel->draw();

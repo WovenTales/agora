@@ -32,7 +32,6 @@ virtual bool scrollTab(bool down) {
 virtual void fill() {
 	int s = data[activeTab].size();
 
-	//! \todo Implement scrollable list.
 	if (s > height() - 2) {
 		s = height() - 2;
 		//! \todo Could definitely look better.

@@ -1,4 +1,4 @@
-#include <ncursesdatabasepanel.hxx>
+#include <ui/ncurses/databasepanel.hxx>
 
 #include <agora.hxx>
 #include <database.hxx>

@@ -1,6 +1,6 @@
-#include <ncursespanel.hxx>
+#include <ui/ncurses/panelbase.hxx>
 
-#include <ncursesui.hxx>
+#include <ui/ncurses/ui.hxx>
 
 
 NcursesPanel::NcursesPanel(bool focus) : tabs() {
@@ -41,6 +41,9 @@ bool NcursesPanel::changeTab(bool right) {
 
 void NcursesPanel::draw() {
 	Log << "Drawing " << name() << " panel...";
+
+	//! \todo Make sure not unnecessarily deleting viable panels
+	werase(panel);
 
 	box(panel, 0, 0);
 

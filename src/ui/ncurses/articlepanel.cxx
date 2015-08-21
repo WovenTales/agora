@@ -1,9 +1,9 @@
-#include <ncursesarticlepanel.hxx>
+#include <ui/ncurses/articlepanel.hxx>
 
 #include <agora.hxx>
 #include <article.hxx>
 #include <database.hxx>
-#include <ncursesui.hxx>
+#include <ui/ncurses/ui.hxx>
 
 #include <curses.h>
 

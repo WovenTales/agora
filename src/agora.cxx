@@ -2,7 +2,7 @@
 
 #include <database.hxx>
 #include <feed.hxx>
-#include <ncursesui.hxx>
+#include <ui/ncurses/ui.hxx>
 
 #include <sstream>
 
