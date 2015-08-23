@@ -109,7 +109,7 @@ void Feed::decrementCount() const {
 		docRefs--;
 	}
 
-	if (feedRefs == UCHAR_MAX) {
+	if (feedRefs == 0) {
 		//! \todo Better error handling
 		cerr << "More deletions of feedRefs than additions" << endl;
 	} else {

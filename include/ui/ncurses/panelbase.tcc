@@ -32,7 +32,7 @@ virtual bool scrollTab(bool down) {
 virtual void fill() {
 	int s = data[activeTab].size();
 
-	if (s > height() - 2) {
+	if (s >= height() - 1) {
 		s = height() - 2;
 		//! \todo Could definitely look better.
 		mvwaddch(panel, height() - 2, width() - 1, ACS_UARROW);
@@ -45,7 +45,7 @@ virtual void fill() {
 			}
 			mvwaddch(panel, i + 1, 1, '*');
 		}
-		mvwaddnstr(panel, i + 1, 2, data[activeTab][i][line()].c_str(), width() - 3);
+		mvwaddnstr(panel, i + 1, 2, data[activeTab][i][line()].c_str(), width() - 4);
 		if (expanded && (i == activeData)) {
 			wattroff(panel, A_BOLD);
 		}

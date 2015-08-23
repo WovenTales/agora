@@ -26,6 +26,8 @@ namespace agora {
 
 	//! Split a string into a vector using the given deliminator.
 	std::vector<std::string> splitString(const std::string&, char = '\n');
+	//! Split a collection of strings using the given deliminator.
+	std::vector<std::string> splitString(const std::vector<std::string>&, char = '\n');
 }
 
 #endif

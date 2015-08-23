@@ -37,8 +37,10 @@ void NcursesArticlePanel::fill() {
 
 	vector<string> split;
 	int y = 1;
+	int h = height() - 1;
+	int w = width() - 4;
 	for (string line : content) {
-		if (y >= height()) {
+		if (y >= h) {
 			//! \todo Could definitely look better.
 			mvwaddch(panel, height() - 2, width() - 1, ACS_UARROW);
 			mvwaddch(panel, height() - 1, width() - 1, ACS_DARROW);
@@ -60,18 +62,23 @@ void NcursesArticlePanel::fill() {
 					line += " " + split[j];
 				}
 
-				if ((line.size() + split[j + 1].size() + 1) > width() - 3) {
-					mvwaddstr(panel, y, 2, line.c_str());
+				if ((line.size() + split[j + 1].size() + 1) > w) {
+					if (line.size() > w) {
+						mvwaddnstr(panel, y, 2, line.c_str(), w - 3);
+						waddstr(panel, "...");
+					} else {
+						mvwaddstr(panel, y, 2, line.c_str());
+					}
 					line = "";
 					++y;
 				}
 
-				if (y == height()) {
+				if (y == h) {
 					break;
 				}
 			}
 
-			if (y < height()) {
+			if (y < h) {
 				mvwaddstr(panel, y, 2, (line + (line.empty() ? "" : " ") + split[c - 1]).c_str());
 			}
 		}
