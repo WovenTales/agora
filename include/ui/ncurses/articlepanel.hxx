@@ -8,24 +8,29 @@
 #include <vector>
 
 
-class NcursesArticlePanel : public NcursesListPanel<Database::Table::Article> {
+//! Displays the content of an Article
+class NcursesArticlePanel : public NcursesPanel {
   private:
+	//! List of content for each tab
 	std::vector<std::string> content;
 
-	virtual std::string              name()  { return "article"; };
-	virtual Panel                    indic() { return Panel::ArticlePanel; };
-	virtual Database::Table::Article line()  { return Database::Table::Article::Content; };
+	virtual std::string name()  { return "article"; };
+	virtual Panel       indic() { return Panel::ArticlePanel; };
 
   public:
-	NcursesArticlePanel(bool focus = false) : NcursesListPanel(focus) { update(); } ;
+	//! \copydoc NcursesPanel(bool)
+	NcursesArticlePanel(bool focus = false) : NcursesPanel(focus) { update(); } ;
 
 	virtual inline int height();
 	virtual inline int width();
 	virtual inline int x();
 	virtual inline int y();
 
+	virtual bool scrollTab(bool);
+
 	virtual void fill();
 
+	//! Open an Article in a new tab
 	void loadArticle(const Database&, const std::string&);
 };
 

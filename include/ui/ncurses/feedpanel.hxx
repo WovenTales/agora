@@ -7,6 +7,7 @@
 #include <string>
 
 
+//! Lists each Article contained in a Feed
 class NcursesFeedPanel : public NcursesListPanel<Database::Table::Article> {
   private:
 	virtual std::string              name()  { return "feed"; };
@@ -14,6 +15,7 @@ class NcursesFeedPanel : public NcursesListPanel<Database::Table::Article> {
 	virtual Database::Table::Article line()  { return Database::Table::Article::Title; };
 
   public:
+	//! \copydoc NcursesPanel(bool)
 	NcursesFeedPanel(bool focus = false) : NcursesListPanel(focus) { update(); } ;
 
 	virtual int height();
@@ -21,6 +23,7 @@ class NcursesFeedPanel : public NcursesListPanel<Database::Table::Article> {
 	virtual int x();
 	virtual int y();
 
+	//! Open a Feed in a new tab
 	void loadFeed(const Database&, const std::string&);
 };
 

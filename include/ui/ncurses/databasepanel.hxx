@@ -7,6 +7,7 @@
 #include <string>
 
 
+//! Lists each Feed contained in a Database
 class NcursesDatabasePanel : public NcursesListPanel<Database::Table::Feed> {
   private:
 	virtual std::string           name()  { return "database"; };
@@ -14,6 +15,7 @@ class NcursesDatabasePanel : public NcursesListPanel<Database::Table::Feed> {
 	virtual Database::Table::Feed line()  { return Database::Table::Feed::Title; };
 
   public:
+	//! \copydoc NcursesPanel(bool)
 	NcursesDatabasePanel(bool focus = false) : NcursesListPanel(focus) { update(); } ;
 
 	virtual int height();
@@ -21,6 +23,7 @@ class NcursesDatabasePanel : public NcursesListPanel<Database::Table::Feed> {
 	virtual int x();
 	virtual int y();
 
+	//! Open a Database in a new tab
 	void loadDatabase(const Database&);
 };
 

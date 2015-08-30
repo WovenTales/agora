@@ -12,7 +12,7 @@ using namespace pugi;
 using namespace std;
 
 
-// Note that shared column names between different tables will be automatically matched.
+// Note that column names shared between different tables will be automatically matched on lookup
 const Database::Data<Database::Table::Article> Database::ArticleColumnName = {
 	{ Table::Article::ID,      "aID" },
 	{ Table::Article::FeedID,  "fID" },
@@ -23,7 +23,9 @@ const Database::Data<Database::Table::Article> Database::ArticleColumnName = {
 	{ Table::Article::Summary, "aSummary" },
 	{ Table::Article::Content, "aContent" }
 };
-std::string Database::Table::column(Database::Table::Article a) {
+/*! \param a Table::Article column to look up
+ */
+std::string Database::Table::column(Article a) {
 	return Database::ArticleColumnName.at(a);
 }
 
@@ -34,7 +36,9 @@ const Database::Data<Database::Table::Feed>    Database::FeedColumnName = {
 	{ Table::Feed::Author,      "fAuthor" },
 	{ Table::Feed::Description, "fDesc" }
 };
-std::string Database::Table::column(Database::Table::Feed f) {
+/*! \param f Table::Feed column to look up
+ */
+std::string Database::Table::column(Feed f) {
 	return Database::FeedColumnName.at(f);
 }
 
@@ -42,7 +46,9 @@ const Database::Data<Database::Table::Meta>    Database::MetaColumnName = {
 	{ Table::Meta::Title,   "title" },
 	{ Table::Meta::Version, "version" }
 };
-std::string Database::Table::column(Database::Table::Meta m) {
+/*! \param m Table::Meta column to look up
+ */
+std::string Database::Table::column(Meta m) {
 	return Database::MetaColumnName.at(m);
 }
 
@@ -64,23 +70,30 @@ Database::Database(const Database &d) : db(d.db), count(d.count) {
 }
 
 Database::~Database() {
-	--(*this);
-}
-
-
-Database &Database::operator=(const Database &d) {
-	count = d.count;
-	db    = d.db;
-
-	++count;
-}
-
-Database &Database::operator--() {
 	if (--count == 0) {
 		close();
 
 		delete &count;
 	}
+}
+
+
+/*! Changes pointed database, but doesn't duplicate staged elements.
+ *
+ *  \warning Discards any items staged for the old database.
+ *           Call Database::save() before assignment to avoid loss of data.
+ */
+Database &Database::operator=(const Database &d) {
+	// Clean up previous object
+	if (--count == 0) {
+		// Force discard as speed is more important in this situation
+		close(false);
+	} else {
+		clearStaged();
+	}
+
+	count = ++d.count;
+	db    = d.db;
 }
 
 
@@ -96,27 +109,29 @@ std::string Database::getTitle() const {
  *  \return An Article with values according to given ID
  */
 Article Database::getArticle(const std::string &id) const {
-	Log << "Requesting article with id '" << id << "'..." << (Log.ENDL | Log.CONTINUE);
+	Log << "Requesting article with id '" << id << "'..." << (Log.ENDL | Log.CONTINUE) << "    ";
 
 	ArticleDataList rows = getColumns<Table::Article>({}, {{ Table::Article::ID, id }});
 
 	if (!rows.size()) {  // rows.size() == 0
-		Log << Log.CONTINUE << "No such article found" << Log.ENDL;
+		Log << /* Log.CONTINUE << */ "    No such article found" << Log.ENDL;
 		return Article();
 	} else {
-		Log << Log.CONTINUE << "Found" << Log.ENDL;
+		Log << /* Log.CONTINUE << */ "    Found" << Log.ENDL;
 		return Article(makeArticle(rows[0]));
 	}
 }
 
-/*! \param data the Data to parse
+/*! \todo What benefit does putting this here give over making it a constructor in Article?
+ *
+ *  \param data the Data to parse
  *  \return The resulting Article
  */
 Article Database::makeArticle(const Database::ArticleData &data) {
 	string id, feedID, title, author, content, link, summary;
 	time_t updated;
 
-	for (pair<const Table::Article, string > c : data) {
+	for (pair<const Table::Article, string> c : data) {
 		if (!c.second.empty()) {
 			switch (c.first) {
 				case Table::Article::ID      : id      = c.second;            break;
@@ -135,15 +150,15 @@ Article Database::makeArticle(const Database::ArticleData &data) {
 }
 
 
-/*! If \c force set to true, avoids saving staged changes before closing database.
+/*! Internal function as improper use could leave object in a fragile state.
  *
- *  \param force whether to skip saving changes (default: save)
+ *  \param commit whether to commit changes or discard them (default: save)
  */
-void Database::close(bool force) {
+void Database::close(bool commit) {
 	if (db) {
 		Log << "Closing database" << Log.ENDL;
 
-		if (force) {
+		if (commit) {
 			clearStaged();
 		} else {
 			save();
@@ -155,17 +170,17 @@ void Database::close(bool force) {
 }
 
 
-/*! If this already has an active database, saves changes to that and closes it rather than overwriting.
+/*! If object already has an active database, saves changes to that and closes it rather than overwriting.
  *
  *  \param filename the feed database to associate this Database with
  */
 void Database::open(const std::string &filename) {
+	// Properly handle any existing database
 	if (!db) {
 		close();
 	}
 
 	Log << "Opening database '" << filename << "'...";
-
 	if (sqlite3_open(filename.c_str(), &db) != SQLITE_OK) {
 		//! \todo Better error handling
 		cerr << "Bad database file" << endl;
@@ -174,10 +189,11 @@ void Database::open(const std::string &filename) {
 	Log << "Completed" << Log.ENDL;
 
 	bool init = true;
-	sqlite3_exec(db, "PRAGMA table_info(feeds)", (int (*)(void*, int, char**, char**))isEmpty, &init, NULL);
+	// If this is a new database, table is nonexistent and so contains no columns
+	sqlite3_exec(db, "PRAGMA table_info(meta)", (int (*)(void*, int, char**, char**))isEmpty, &init, NULL);
 
 	if (init) {
-		//! \todo Generate automatically.
+		//! \todo Generate programatically
 		string meta =     "CREATE TABLE meta     (title,"
 		                                         "version);"
 		                          "INSERT INTO meta (title, version) VALUES ('" + replaceAll(filename, "'", "''") + "', 2);";
@@ -195,6 +211,7 @@ void Database::open(const std::string &filename) {
 		                                         "aAuthor,"
 		                                         "aSummary,"
 		                                         "aContent);";
+
 		exec(meta.append(feeds).append(articles).c_str());
 		Log << "New database initialized" << Log.ENDL;
 	}
@@ -230,6 +247,7 @@ void Database::stage(const Feed &f) {
 
 	feedStage.push(p);
 
+	// Generate and stage articles
 	string id = p->getID();
 	FeedLang lang = p->getLang();
 	xml_node root = p->getRoot();
@@ -240,14 +258,14 @@ void Database::stage(const Feed &f) {
 	     entry.type(); // != NULL
 	     entry = entry.next_sibling(tag)) {
 		stage(Article(entry, *p, lang));
-		count++;
+		++count;
 	}
 
 	Log << "Staged " << count << " articles from feed" << Log.ENDL;
 }
 
 
-//! \todo Update to use new Table::Column.
+//! \todo Update to use new Table::Column structure
 void Database::save() {
 	Log << "Committing staged elements" << Log.ENDL;
 
@@ -256,6 +274,7 @@ void Database::save() {
 	string cols("");
 	string vals("");
 
+	// Essentially, retrieve the next element and form a SQLite command out of each member, then repeat
 	const Article *a;
 	while (!articleStage.empty()) {
 		a = articleStage.front();
@@ -360,11 +379,17 @@ void Database::exec(const std::string &cmd) {
 	sqlite3_exec(db, cmd.c_str(), NULL, NULL, NULL);
 }
 
+/*! For use in sqlite3_exec() calls.
+ *
+ *  \todo Document params
+ */
 int Database::isEmpty(bool *out, int cols, char *data[], char *colNames[]) {
+	// If no matching columns are found
+	//! \bug Does this hold for WHERE clauses matching nothing like it does for PRAGMA?
 	if (cols == 0) {
 		*out = true;
 	} else {
 		*out = false;
 	}
-	return 0;
+	return 0;  // Successful call
 }

@@ -5,9 +5,6 @@
 
 #include <curses.h>
 
-using namespace agora;
-using namespace std;
-
 
 int NcursesDatabasePanel::height() {
 	return LINES;
@@ -26,11 +23,13 @@ int NcursesDatabasePanel::y() {
 }
 
 
+//! \param db the Database to load
 void NcursesDatabasePanel::loadDatabase(const Database &db) {
 	tabs.push_back(db.getTitle());
 
-	Database::FeedDataList tmp = db.getColumns<Database::Table::Feed>({ Database::Table::Feed::Title, Database::Table::Feed::ID });
-	data.push_back(tmp);
+	// We only need to display some of the data
+	data.push_back(db.getColumns<Database::Table::Feed>(
+				{ Database::Table::Feed::Title, Database::Table::Feed::ID }));
 
 	++activeTab;
 }

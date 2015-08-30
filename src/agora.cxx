@@ -34,7 +34,7 @@ std::string agora::parseAtomTitle(const pugi::xml_node &t) {
 	return title;
 }
 
-/*! \todo Implement; might be an already existing library to simplify this
+/*! \todo Implement; might be an already existing library to simplify this\n
  *        Will likely require some ability to disambiguate eg. `04-02-10` based on patten in other articles from same feed
  *
  *  \param t the string to parse

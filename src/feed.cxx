@@ -25,7 +25,7 @@ Feed::Feed() : feed(NULL), docRefs(*new unsigned char(1)), feedRefs(*new unsigne
 /*! \param f the feed to copy
  */
 Feed::Feed(const Feed &f) : feed(f.feed), docRefs(f.docRefs), feedRefs(*new unsigned char(1)) {
-	docRefs++;
+	++docRefs;
 
 	id = f.id;
 	title = f.title;
@@ -58,12 +58,13 @@ Feed::Feed(std::string filename) : feed(new xml_document()), docRefs(*new unsign
 
 	// Can't use getRoot because it needs to know the language
 	//   Could set it in that function, but then wouldn't be const
+	//! \todo Split off into a detectLang that will allow proper encapsulation
 	xml_node rss = feed->child("rss").child("channel");
 	xml_node atom = feed->child("feed");
 
-	if (rss.type()) {
+	if (rss.type()) {  // rss is not a null node
 		parseRss(rss);
-	} else if (atom.type() && !strcmp(atom.attribute("xmlns").value(), "http://www.w3.org/2005/Atom")) {
+	} else if (atom.type() && !strcmp(atom.attribute("xmlns").value(), "http://www.w3.org/2005/Atom")) {  // atom not null node && atom.xmlns == ...
 		parseAtom(atom);
 	} else {
 		//! \todo Better error handling
@@ -142,6 +143,7 @@ void Feed::parseAtom(const xml_node &feed) {
 
 	updated = parseTime(feed.child_value("updated"));
 
+	// link == "" && id follows URL pattern
 	if (!link.compare("") && (!id.compare(0, 7, "http://") || !id.compare(0, 8, "https://"))) {
 		link = id;
 	}
@@ -161,7 +163,7 @@ void Feed::parseRss(const xml_node &feed) {
 
 	updated = parseTime(feed.child_value("pubDate"));
 
-	if (id.compare("")) {  // id != ""
+	if (!id.compare("")) {  // id == ""
 		//! \todo Generate unique id
 	}
 
@@ -170,7 +172,8 @@ void Feed::parseRss(const xml_node &feed) {
 
 
 void Feed::print() const {
-	cout << title << (description != "" ? ": " : "") << description << endl;
-	cout << "  " << author << endl;
-	cout << "  #" << id << endl;
+	Log << "Printing feed:" << (Log.ENDL | Log.CONTINUE) << "    ";
+	Log << title << (description != "" ? ": " : "") << description << (Log.ENDL | Log.CONTINUE) << "    ";
+	Log << author << (link != "" ? " @ " : "") << link << (Log.ENDL | Log.CONTINUE) << "    ";
+	Log << "#" << id << Log.ENDL;
 }

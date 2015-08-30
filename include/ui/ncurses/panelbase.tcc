@@ -2,15 +2,16 @@
 
 public:
 
+//! \copydoc NcursesPanel(bool)
 NcursesListPanel(bool focus = false) : NcursesPanel(focus), data() {
 	activeData = 0;
 }
 
 
-//! \bug Doesn't properly clear old render.
 virtual bool scrollTab(bool down) {
 	int d = data[activeTab].size() - 1;
 
+	// If there is no more than a single element in the list
 	if (d <= 0) {
 		return false;
 	}
@@ -34,12 +35,13 @@ virtual void fill() {
 
 	if (s >= height() - 1) {
 		s = height() - 2;
-		//! \todo Could definitely look better.
+		//! \todo Could definitely look better
 		mvwaddch(panel, height() - 2, width() - 1, ACS_UARROW);
 		mvwaddch(panel, height() - 1, width() - 1, ACS_DARROW);
 	}
 	for (int i = 0; i < s; ++i) {
 		if (i == activeData) {
+			// Only emphasize if control is here
 			if (expanded) {
 				wattron(panel, A_BOLD);
 			}

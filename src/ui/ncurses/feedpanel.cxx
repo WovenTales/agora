@@ -23,12 +23,17 @@ int NcursesFeedPanel::y() {
 }
 
 
+/*! \param db  the Database containing the desired article
+ *  \param fID the article ID to search for
+ */
 void NcursesFeedPanel::loadFeed(const Database &db, const std::string &fID) {
-	Database::FeedDataList t = db.getColumns<Database::Table::Feed>({ Database::Table::Feed::Title }, {{ Database::Table::Feed::ID, fID }});
-	Database::ArticleDataList a = db.getColumns<Database::Table::Article>({ Database::Table::Article::Title }, {{ Database::Table::Article::FeedID, fID }});
-
-	tabs.push_back(t[0][Database::Table::Feed::Title]);
-	data.push_back(a);
+	// Get feed title for tab name
+	tabs.push_back(db.getColumns<Database::Table::Feed>(
+				{ Database::Table::Feed::Title }, {{ Database::Table::Feed::ID, fID }}
+			)[0][Database::Table::Feed::Title]);
+	// We only need to display some of the data
+	data.push_back(db.getColumns<Database::Table::Article>(
+				{ Database::Table::Article::Title }, {{ Database::Table::Article::FeedID, fID }}));
 
 	++activeTab;
 }

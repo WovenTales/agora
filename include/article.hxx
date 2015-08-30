@@ -9,63 +9,62 @@ class Feed;
 #include <time.h>
 
 
-//! A particular entry from some feed.
+//! A particular entry from some feed
 class Article {
   private:
+	//! Assignment operator
+	/*! \todo Make public (see Database for model) */
 	Article &operator=(const Article&);
 
 	// Expected members
-	std::string id;
-	const Feed &parent;
-	std::string title;
-	time_t updated;
-	std::string link;
+	std::string id;       //!< Unique ID
+	const Feed &parent;   //!< Containing Feed
+	std::string title;    //!< Display title
+	time_t updated;       //!< Time of last update
+	std::string link;     //!< Permanent link to original article
 
 	// Optional members
-	std::string author;
-	std::string content;  //!\todo See http://atomenabled.org/developers/syndication/#contentElement
-	std::string summary;
+	std::string author;   //!< Author of the article
+	/*! \todo See http://atomenabled.org/developers/syndication/#contentElement */
+	std::string content;  //!< Main content
+	std::string summary;  //!< Short description
 
-	/*! \class Article
-	 *  \todo Add:
-	 *  category tags
-	 *  \<source> management
-	 */
-
+	//! Parse the article as ATOM
 	void parseAtom(const pugi::xml_node&);
+	//! Parse the article as RSS
 	void parseRss(const pugi::xml_node&);
 	
   public:
-	//! Default constructor.
+	//! Default constructor
 	Article();
-	//! Standard copy constructor.
+	//! Standard copy constructor
 	Article(const Article&);
-	//! Construct article from given node.
+	//! Construct article from given node
 	Article(const pugi::xml_node&, const Feed&, const agora::FeedLang&);
-	//! Construct article using given parameters.
+	//! Construct article using given parameters
 	Article(const std::string&, const std::string&, const std::string&, const std::string&, const time_t&,
 			const std::string& ="", const std::string& ="", const std::string& ="");
-	//! Standard destructor.
+	//! Standard destructor
 	virtual ~Article();
 
-	//! \return Author  
+	//! \return \copybrief author
 	std::string getAuthor()     const { return author; };  
-	//! \return Content
+	//! \return \copybrief content
 	std::string getContent()    const { return content; };
-	//! \return ID of parent feed
-	std::string getFID()        const;  //Define in .cxx so don't need #include <feed.hxx> here
-	//! \return %Article ID
+	//! \return ID of parent feed.
+	std::string getFID() const;  //Define in .cxx so don't need #include <feed.hxx> here
+	//! \return \copybrief id
 	std::string getID()         const { return id; };
-	//! \return Link to original article
+	//! \return \copybrief link
 	std::string getLink()       const { return link; };
-	//! \return Summary of content
+	//! \return \copybrief summary
 	std::string getSummary()    const { return summary; };
-	//! \return Title
+	//! \return \copybrief title
 	std::string getTitle()      const { return title; };
-	//! \return Time of last update
+	//! \return \copybrief updated
 	time_t      getUpdateTime() const { return updated; };
 
-	//! Print the article to cout, for debugging purposes.
+	//! Print the article to the Log, for debugging purposes
 	void print() const;
 };
 
