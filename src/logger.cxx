@@ -74,6 +74,7 @@ Logger &Logger::operator--() {
 }
 
 Logger &Logger::operator<<(const Logger::Command &in) {
+	// CONTINUE && same error state as current
 	if ((in & CONTINUE_BIT) && ((in & ERROR_BIT) == error)) {
 		continued = true;
 	}
@@ -81,6 +82,7 @@ Logger &Logger::operator<<(const Logger::Command &in) {
 	if (in & ENDL_BIT) {
 		if ((in & FORCE_BIT) || (!terminated)) {
 			stream() << endl;
+			continued = false;
 			terminated = true;
 		}
 		error = false;

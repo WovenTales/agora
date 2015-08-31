@@ -52,7 +52,9 @@ Article::Article(const pugi::xml_node &entry, const Feed &feed, const FeedLang &
 	}
 }
 
-/*! \todo Try to find something like Python's parameter dictionay so order's not as difficult to maintain
+/*! \todo Try to find something like Python's parameter dictionary so order's not as difficult to maintain\n
+ *        https://isocpp.org/wiki/faq/ctors#named-parameter-idiom seems workable\n
+ *        The main reason the properties are private is to disallow manipulation; set iff empty?
  *
  *  \param id      article ID
  *  \param feedID  ID of parent feed
@@ -75,20 +77,22 @@ Article::Article(const std::string &id, const std::string &feedID, const std::st
 }
 
 Article::~Article() {
-	if (parent.getCount() == 1) {
+	parent.decrementCount();
+	if (!parent.getCount()) {
 		delete &parent;
-	} else {
-		parent.decrementCount();
 	}
 }
 
 
+// Define here so don't need #include <feed.hxx> in the header
 string Article::getFID() const {
 	return parent.getID();
 }
 
 
-void Article::parseAtom(const xml_node &entry) {
+/*! \param entry the pugi::xml_node containing the article data
+ */
+void Article::parseAtom(const pugi::xml_node &entry) {
 	Log << "Parsing article as Atom...";
 
 	id = entry.child_value("id");
@@ -110,7 +114,9 @@ void Article::parseAtom(const xml_node &entry) {
 	Log << "Completed parsing '" << title << "'" << Log.ENDL;
 }
 
-void Article::parseRss(const xml_node &entry) {
+/*! \param entry the pugi::xml_node containing the article data
+ */
+void Article::parseRss(const pugi::xml_node &entry) {
 	Log << "Parsing article as RSS...";
 
 	// pugixml safely gives empty string if node doesn't exist
@@ -128,9 +134,9 @@ void Article::parseRss(const xml_node &entry) {
 		//! \todo Generate unique id
 	}
 
-	if (!link.compare("") &&  // link == "" &&
+	if (!link.compare("") &&                                                      // link == "" &&
 	    strcmp(entry.child("guid").attribute("isPermaLink").value(), "false") &&  // isPermaLink != "false" &&
-	    (!id.compare(0, 7, "http://") || !id.compare(0, 8, "https://"))) {  // id[0..7] == "http://" || id[0..8] == "https://"
+	    (!id.compare(0, 7, "http://") || !id.compare(0, 8, "https://"))) {        // id[0..7] == "http://" || id[0..8] == "https://"
 		link = id;
 	}
 
@@ -139,8 +145,9 @@ void Article::parseRss(const xml_node &entry) {
 
 
 void Article::print() const {
-	cout << title << " (#" << id << ")" << endl;
-	cout << author << " @ " << link << endl;
-	cout << summary << endl;
-	cout << content << endl;
+	Log << "Printing article:" << (Log.ENDL | Log.CONTINUE) << "    ";
+	Log << title << " (#" << id << ")" << (Log.ENDL | Log.CONTINUE) << "    ";
+	Log << author << " @ " << link << (Log.ENDL | Log.CONTINUE) << "    ";
+	Log << summary << (Log.ENDL | Log.CONTINUE) << "    ";
+	Log << content << Log.ENDL;
 }

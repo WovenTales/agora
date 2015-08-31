@@ -1,8 +1,10 @@
-FILES = agora article database feed logger
+FILES   = agora article database feed logger
+INCHEAD =
+INCONLY = database.tcc logger.tcc
 
 LOGFILE = agora.log
 
-RUNCMD = $(BINDIR)/agora whatif.atom test.sqlite
+RUNCMD = $(BINDIR)/agora test.sqlite
 
 SRCDIR = src
 INCDIR = include
@@ -15,7 +17,7 @@ INCLUDE = -I./$(INCDIR) -lpugixml -lsqlite3
 FLAGS = $(DEFINE) $(INCLUDE) --std=c++11
 
 SOURCES = $(FILES:%=$(SRCDIR)/%.cxx)
-HEADERS = $(FILES:%=$(INCDIR)/%.hxx) $(addprefix $(INCDIR)/,logger.tcc)
+HEADERS = $(FILES:%=$(INCDIR)/%.hxx) $(INCHEAD:%=$(INCDIR)/%.hxx) $(INCONLY:%=$(INCDIR)/%)
 OBJECTS = $(FILES:%=$(OBJDIR)/%.o)
 DEPENDS = $(FILES:%=$(OBJDIR)/%.d)
 
@@ -53,7 +55,6 @@ $(OBJDIR):
 	mkdir $(OBJDIR)
 $(BINDIR):
 	mkdir $(BINDIR)
-
 
 $(OBJDIR)/%.o: $(SRCDIR)/%.cxx
 	g++ -o $@ -c $< -MMD $(FLAGS)
