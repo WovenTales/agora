@@ -2,6 +2,8 @@ FILES   = agora article database feed logger
 INCHEAD =
 INCONLY = database.tcc logger.tcc
 
+LIBRARIES = curl pugixml sqlite3
+
 LOGFILE = agora.log
 
 RUNCMD = $(BINDIR)/agora test.sqlite
@@ -12,9 +14,13 @@ OBJDIR = obj
 BINDIR = bin
 DOCDIR = docs
 
+FLAGS = --std=c++11
+DEBUG = -g -DDEBUG
+
+
 DEFINE = -DLOGFILE=\"$(LOGFILE)\"
-INCLUDE = -I./$(INCDIR) -lpugixml -lsqlite3
-FLAGS = $(DEFINE) $(INCLUDE) --std=c++11
+INCLUDE = -I./$(INCDIR) $(LIBRARIES:%=-l%)
+PARAMS = $(DEFINE) $(INCLUDE) $(FLAGS)
 
 SOURCES = $(FILES:%=$(SRCDIR)/%.cxx)
 HEADERS = $(FILES:%=$(INCDIR)/%.hxx) $(INCHEAD:%=$(INCDIR)/%.hxx) $(INCONLY:%=$(INCDIR)/%)
@@ -23,9 +29,9 @@ DEPENDS = $(FILES:%=$(OBJDIR)/%.d)
 
 
 $(BINDIR)/agora: $(OBJDIR) $(BINDIR) $(OBJECTS)
-	g++ -o $@ $(OBJECTS) $(FLAGS)
+	g++ -o $@ $(OBJECTS) $(PARAMS)
 
-debug: FLAGS += -g -DDEBUG
+debug: PARAMS += $(DEBUG)
 debug: $(BINDIR)/agora
 
 # Provide simple name to call
@@ -35,7 +41,7 @@ $(DOCDIR)/html: $(DOCDIR)/Doxyfile $(SOURCES) $(HEADERS)
 
 .PHONY: clean clean-docs
 clean:
-	-rm -f $(OBJDIR)/* $(LOGFILE) $(BINDIR)/agora
+	-rm -fr $(OBJDIR)/* $(LOGFILE) $(BINDIR)/agora
 	-rmdir $(BINDIR) $(OBJDIR)
 clean-docs:
 	find docs/* ! -iname 'Doxyfile' -print0 | xargs -0 rm -rf
@@ -57,6 +63,6 @@ $(BINDIR):
 	mkdir $(BINDIR)
 
 $(OBJDIR)/%.o: $(SRCDIR)/%.cxx
-	g++ -o $@ -c $< -MMD $(FLAGS)
+	g++ -o $@ -c $< -MMD $(PARAMS)
 
 -include $(DEPENDS)

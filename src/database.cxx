@@ -13,43 +13,46 @@ using namespace std;
 
 
 // Note that column names shared between different tables will be automatically matched on lookup
-const Database::Data<Database::Table::Article> Database::ArticleColumnName = {
-	{ Table::Article::ID,      "aID" },
-	{ Table::Article::FeedID,  "fID" },
-	{ Table::Article::Title,   "aTitle" },
-	{ Table::Article::Updated, "aUpdated" },
-	{ Table::Article::Link,    "aLink" },
-	{ Table::Article::Author,  "aAuthor" },
-	{ Table::Article::Summary, "aSummary" },
-	{ Table::Article::Content, "aContent" }
+const Database::Table::table_hash_map<Database::Table::Article, Database::ColumnData> Database::ArticleColumnName = {
+	{ Table::Article::ID,       { "aID",      false } },
+	{ Table::Article::FeedID,   { "fID",      false } },
+	{ Table::Article::Title,    { "aTitle",   true  } },
+	{ Table::Article::Updated,  { "aUpdated", false } },
+	{ Table::Article::Link,     { "aLink",    true  } },
+	{ Table::Article::Author,   { "aAuthor",  true  } },
+	{ Table::Article::Summary,  { "aSummary", true  } },
+	{ Table::Article::Content,  { "aContent", true  } }
 };
 /*! \param a Table::Article column to look up
  */
-std::string Database::Table::column(Article a) {
-	return Database::ArticleColumnName.at(a);
+std::string Database::Table::column(Database::Table::Article a) {
+	return Database::ArticleColumnName.at(a).name;
 }
 
-const Database::Data<Database::Table::Feed>    Database::FeedColumnName = {
-	{ Table::Feed::ID,          "fID" },
-	{ Table::Feed::Title,       "fTitle" },
-	{ Table::Feed::Link,        "fLink" },
-	{ Table::Feed::Author,      "fAuthor" },
-	{ Table::Feed::Description, "fDesc" }
+const Database::Table::table_hash_map<Database::Table::Feed, Database::ColumnData>    Database::FeedColumnName = {
+	{ Table::Feed::ID,          { "fID",      false } },
+	{ Table::Feed::URI,         { "fURI",     false } },
+	{ Table::Feed::Title,       { "fTitle",   true  } },  //!< \todo Implement and check for user-specified title
+	{ Table::Feed::Updated,     { "fUpdated", false } },
+	{ Table::Feed::Link,        { "fLink",    true  } },
+	{ Table::Feed::Author,      { "fAuthor",  true  } },  //!< \todo Change all feeds using (previous) default author
+	{ Table::Feed::Description, { "fDesc",    true  } }
 };
 /*! \param f Table::Feed column to look up
  */
-std::string Database::Table::column(Feed f) {
-	return Database::FeedColumnName.at(f);
+std::string Database::Table::column(Database::Table::Feed f) {
+	return Database::FeedColumnName.at(f).name;
 }
 
-const Database::Data<Database::Table::Meta>    Database::MetaColumnName = {
-	{ Table::Meta::Title,   "title" },
-	{ Table::Meta::Version, "version" }
+// Note that Meta columns are not updated, and so second column has no effect
+const Database::Table::table_hash_map<Database::Table::Meta, Database::ColumnData>    Database::MetaColumnName = {
+	{ Table::Meta::Title,       { "title",    false } },
+	{ Table::Meta::Version,     { "version",  false } }
 };
 /*! \param m Table::Meta column to look up
  */
-std::string Database::Table::column(Meta m) {
-	return Database::MetaColumnName.at(m);
+std::string Database::Table::column(Database::Table::Meta m) {
+	return Database::MetaColumnName.at(m).name;
 }
 
 
@@ -102,8 +105,9 @@ std::string Database::getTitle() const {
 	return replaceAll(out[0][Table::Meta::Title], "''", "'");
 }
 
+
 /*! If database doesn't contain given ID, returns an Article with default values
- *  (mostly empty strings) for all members.
+ *    (mostly empty strings) for all members.
  *
  *  \param id article ID
  *  \return An Article with values according to given ID
@@ -114,39 +118,66 @@ Article Database::getArticle(const std::string &id) const {
 	ArticleDataList rows = getColumns<Table::Article>({}, {{ Table::Article::ID, id }});
 
 	if (!rows.size()) {  // rows.size() == 0
-		Log << /* Log.CONTINUE << */ "    No such article found" << Log.ENDL;
+		Log << "    No such article found" << Log.ENDL;
 		return Article();
 	} else {
-		Log << /* Log.CONTINUE << */ "    Found" << Log.ENDL;
-		return Article(makeArticle(rows[0]));
+		Log << "    Found" << Log.ENDL;
+		return Article(rows[0]);
 	}
 }
 
-/*! \todo What benefit does putting this here give over making it a constructor in Article?
+/*! If database doesn't contain given ID, returns a Feed with default values
+ *    (mostly empty strings) for all members.
  *
- *  \param data the Data to parse
- *  \return The resulting Article
+ *  \param id feed ID
+ *  \return An Feed with values according to given ID
  */
-Article Database::makeArticle(const Database::ArticleData &data) {
-	string id, feedID, title, author, content, link, summary;
-	time_t updated;
+Feed Database::getFeed(const std::string &id) const {
+	Log << "Requesting feed with id '" << id << "'..." << (Log.ENDL | Log.CONTINUE) << "    ";
 
-	for (pair<const Table::Article, string> c : data) {
-		if (!c.second.empty()) {
-			switch (c.first) {
-				case Table::Article::ID      : id      = c.second;            break;
-				case Table::Article::FeedID  : feedID  = c.second;            break;
-				case Table::Article::Title   : title   = c.second;            break;
-				case Table::Article::Updated : updated = parseTime(c.second); break;
-				case Table::Article::Link    : link    = c.second;            break;
-				case Table::Article::Author  : author  = c.second;            break;
-				case Table::Article::Summary : summary = c.second;            break;
-				case Table::Article::Content : content = c.second;            break;
-			}
-		}
+	FeedDataList rows = getColumns<Table::Feed>({}, {{ Table::Feed::ID, id }});
+
+	if (!rows.size()) {  // rows.size() == 0
+		Log << "    No such article found" << Log.ENDL;
+		return Feed();
+	} else {
+		Log << "    Found" << Log.ENDL;
+		return Feed(rows[0]);
+	}
+}
+
+/*! \return Whether the feed document differed from the saved copy\n
+ *          Note that time of last update will always be changed to current time
+ */
+void Database::updateFeed(const std::string &id) {
+	//! \todo Adapt to new location and complete
+	/*
+	Feed remote(uri, lang);
+
+	// id, uri should stay constant
+	if (author.compare(remote.author)) {
+		//! \todo Change all feeds using (previous) default author
+		author = remote.author;
+		changed = true;
+	}
+	if (link.compare(remote.description)) {
+		description = remote.description;
+		changed = true;
+	}
+	if (link.compare(remote.link)) {
+		link = remote.link;
+		changed = true;
+	}
+	if (title.compare(remote.title)) {
+		//! \todo Implement and check for user-specified title
+		title = remote.title;
+		changed = true;
 	}
 
-	return Article(id, feedID, title, link, updated, author, content, summary);
+	updated = time(NULL);
+
+	// Update associated articles
+	*/
 }
 
 

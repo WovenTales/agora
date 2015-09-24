@@ -1,6 +1,5 @@
 #include <article.hxx>
 
-#include <feed.hxx>
 #include <logger.hxx>
 
 #include <iostream>
@@ -13,7 +12,7 @@ using namespace std;
 
 /*! Sets all parameters to empty string or equivalent.
  */
-Article::Article() : parent(*new Feed) {
+Article::Article(const Feed &p) : parent(p) {
 	id = "";
 	title = "";
 	updated = parseTime("");
@@ -52,28 +51,32 @@ Article::Article(const pugi::xml_node &entry, const Feed &feed, const FeedLang &
 	}
 }
 
-/*! \todo Try to find something like Python's parameter dictionary so order's not as difficult to maintain\n
- *        https://isocpp.org/wiki/faq/ctors#named-parameter-idiom seems workable\n
- *        The main reason the properties are private is to disallow manipulation; set iff empty?
- *
- *  \param id      article ID
- *  \param feedID  ID of parent feed
- *  \param title   title
- *  \param link    link to original article
- *  \param updated time of last update
- *  \param author  author
- *  \param content content
- *  \param summary summary
+void Article::parseArticleData(const Database::ArticleData &data) {
+	for (pair<const Database::Table::Article, string> c : data) {
+		if (!c.second.empty()) {
+			switch (c.first) {
+				case Database::Table::Article::ID      : id      = c.second;            break;
+				case Database::Table::Article::Title   : title   = c.second;            break;
+				case Database::Table::Article::Updated : updated = parseTime(c.second); break;
+				case Database::Table::Article::Link    : link    = c.second;            break;
+				case Database::Table::Article::Author  : author  = c.second;            break;
+				case Database::Table::Article::Summary : summary = c.second;            break;
+				case Database::Table::Article::Content : content = c.second;            break;
+			}
+		}
+	}
+}
+/*! \param data data with which to initialize
+ *  \param fID  ID of the parent feed
  */
-Article::Article(const std::string &id, const std::string &feedID, const std::string &title, const std::string &link, const time_t &updated,
-		const std::string &author, const std::string &content, const std::string &summary) : parent(*new Feed(feedID, "")) {
-	this->id = id;
-	this->title = title;
-	this->link = link;
-	this->updated = updated;
-	this->author = author;
-	this->content = content;
-	this->summary = summary;
+Article::Article(const Database::ArticleData &data, const std::string &fID) : Article(*new Feed({{ Database::Table::Feed::ID, fID }})) {
+	parseArticleData(data);
+}
+/*! \param data data with which to initialize
+ *  \param p    feed to link as parent
+ */
+Article::Article(const Database::ArticleData &data, const Feed &p) : Article(p) {
+	parseArticleData(data);
 }
 
 Article::~Article() {

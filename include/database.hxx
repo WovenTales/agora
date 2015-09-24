@@ -28,6 +28,9 @@ class Database {
 	  public:
 		friend class Database;
 
+		// When adding new column to any enum, don't forget to add corresponding
+		//   name to table in src/database.cxx and object constructor!
+
 		//! Article parameters
 		enum struct Article {
 			ID,
@@ -47,7 +50,9 @@ class Database {
 		//! Feed parameters
 		enum struct Feed {
 			ID,
+			URI,
 			Title,
+			Updated,
 			Link,
 			Author,
 			Description
@@ -115,15 +120,23 @@ class Database {
 	typedef DataList<Table::Meta>    MetaDataList;
 
   private:
+	//! Encapsulation of information on table columns to allow dynamic generation
+	struct ColumnData {
+		std::string name;    //!< Name in SQLite database
+		/*! \todo Make function pointer */
+		bool        update;  //!< Whether to preform simple automatic update on column
+	};
+
 	//! Core SQLite3 database pointer
 	sqlite3 *db;
 
+	/*! \todo Move to respective objects, along with column struct */
 	//! \copybrief MetaColumnName
-	static const Data<Table::Article> ArticleColumnName;
+	static const Table::table_hash_map<Database::Table::Article, Database::ColumnData> ArticleColumnName;
 	//! \copybrief MetaColumnName
-	static const Data<Table::Feed>    FeedColumnName;
+	static const Table::table_hash_map<Database::Table::Feed, Database::ColumnData>    FeedColumnName;
 	//! Provide a lookup for SQLite database names
-	static const Data<Table::Meta>    MetaColumnName;
+	static const Table::table_hash_map<Database::Table::Meta, Database::ColumnData>    MetaColumnName;
 
 	//! List of changes to save to the database
 	std::queue<const Article*> articleStage;
@@ -160,9 +173,11 @@ class Database {
 	std::string getTitle() const;
 
 	//! Request an Article by ID
-	Article        getArticle(const std::string&) const;
-	//! Create Article from given data
-	static Article makeArticle(const ArticleData&);
+	Article getArticle(const std::string&) const;
+	//! Request a Feed by ID
+	Feed getFeed(const std::string&) const;
+	//! Check feed document and update if necessary
+	void updateFeed(const std::string&);
 
 	//! Open specified database file
 	void open(const std::string&);

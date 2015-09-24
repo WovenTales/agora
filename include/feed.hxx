@@ -2,6 +2,7 @@
 #define FEED_H
 
 #include <agora.hxx>
+#include <database.hxx>
 
 #include <pugixml.hpp>
 #include <string>
@@ -25,9 +26,9 @@ class Feed {
 
 	// Expected members
 	std::string id;                  //!< Unique ID
+	std::string uri;                 //!< URI to locate feed
 	std::string title;               //!< Display title
-	/*! Only has limited utility (we've already downloaded the file) */
-	time_t updated;                  //!< Time of last update
+	time_t updated;                  //!< Last time feed document checked
 
 	// Optional members
 	std::string author;              //!< Default author of the feed
@@ -35,6 +36,8 @@ class Feed {
 	std::string link;                //!< Link to the feed homepage
 	std::string description;         //!< Short description
 
+	//! Parse the feed according to internal language
+	void parse();
 	//! Parse the feed as an ATOM document
 	void parseAtom(const pugi::xml_node&);
 	//! Parse the feed as an RSS document
@@ -46,21 +49,21 @@ class Feed {
 	//! Copy constructor
 	Feed(const Feed&);
 	//! Build feed manually
-	Feed(const std::string&, const std::string&);
-	//! Construct feed from local file
-	Feed(std::string filename);
+	Feed(const Database::FeedData&, agora::FeedLang = agora::UNKNOWN_LANG);
+	//! Construct feed from file
+	Feed(const std::string&, agora::FeedLang = agora::UNKNOWN_LANG);
 	//! Standard destructor
 	virtual ~Feed();
 
 	//! \return \copybrief author
-	/*! \todo May want to do something different with getters ("Returns \\copybrief"?) */
+	/*! \todo Do something different with getters ("Returns \\copybrief"?) so is brief description rather than return statement (improper order of docs) */
 	std::string     getAuthor()      const { return author; };
 	//! \return \copybrief description
 	std::string     getDescription() const { return description; };
 	//! \return \copybrief id
 	std::string     getID()          const { return id; };
 	//! \return \copybrief lang
-	agora::FeedLang getLang()        const { return lang; };
+	agora::FeedLang getLang()        const;
 	//! \return \copybrief link
 	std::string     getLink()        const { return link; };
 	//! \return Root node
@@ -81,7 +84,7 @@ class Feed {
 	unsigned char getCount()  const { return feedRefs; };
 
 	//! Is the feed "live", i.e. it references a feed document
-	bool          isLive() const { return (feed); };
+	bool isLive() const { return (feed == NULL); };
 
 	//! Print the feed to cout, for debugging purposes
 	void print() const;

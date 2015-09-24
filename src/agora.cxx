@@ -1,9 +1,10 @@
 #include <agora.hxx>
 
+#include <article.hxx>
 #include <database.hxx>
 #include <feed.hxx>
-#include <ui/ncurses/ui.hxx>
 
+#include <curl/curl.h>
 #include <locale.h>
 #include <sstream>
 
@@ -11,16 +12,59 @@
 int main(int argc, char *argv[]) {
 	// Enable Unicode glyphs (assuming UTF-8 locale + article encoding)
 	setlocale(LC_CTYPE, "");
+	//! \todo Call curl_global_init() with proper params
 
 	Database db(argv[1]);
-	db.stage(Feed("bigfinish.rss"));
-	db.stage(Feed("whatif.atom"));
+	db.stage(Feed("file://bigfinish.rss"));
+	db.stage(Feed("file://whatif.atom"));
 	db.save();
 
 	Article a = db.getArticle("http://what-if.xkcd.com/135/");
 	a.print();
+
+	// Cleanup
+	curl_global_cleanup();
 }
 
+
+
+//! Callback required for cURL calls
+/*! \param ptr   data obtained by cURL
+ *  \param size  one dimension of data size
+ *  \param nmemb one dimension of data size
+ *  \param dest  std::string* to write into
+ */
+size_t curlWrite(char *ptr, size_t size, size_t nmemb, void *dest) {
+	for (unsigned int i = 0; i < (size * nmemb); ++i) {
+		((std::string*) dest)->push_back(ptr[i]);
+	}
+
+	return (size * nmemb);  // tell curl how many bytes we handled
+}
+/*! \param url the page to download
+ *  \return A string representation of the file
+ */
+std::string agora::download(const std::string &url) {
+	std::string data;
+
+	CURL *curl = curl_easy_init();
+	if (curl == NULL) {
+		//! \todo Throw error
+	}
+
+	//! \todo Check for and handle error at each step according to libcurl-errors (want CURLE_OK)
+	curl_easy_setopt(curl, CURLOPT_URL, url.c_str());
+	curl_easy_setopt(curl, CURLOPT_WRITEFUNCTION, curlWrite);
+	curl_easy_setopt(curl, CURLOPT_WRITEDATA, &data);
+
+	if (curl_easy_perform(curl) != CURLE_OK) {
+		//! \todo Throw error
+	}
+
+	curl_easy_cleanup(curl);
+
+	return data;
+}
 
 
 /*! \todo Implement: see http://atomenabled.org/developers/syndication/#text
@@ -33,14 +77,13 @@ std::string agora::parseAtomTitle(const pugi::xml_node &t) {
 	return title;
 }
 
-/*! \todo Implement; might be an already existing library to simplify this\n
- *        Will likely require some ability to disambiguate eg. `04-02-10` based on patten in other articles from same feed
+/*! Wrapper for curl_getdate() to simplify #includes.
  *
  *  \param t the string to parse
  *  \return Correctly parsed time
  */
 time_t agora::parseTime(const std::string &t) {
-	return time(NULL);
+	return curl_getdate(t.c_str(), NULL);
 }
 
 

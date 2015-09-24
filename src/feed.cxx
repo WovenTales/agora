@@ -5,7 +5,9 @@ class Article;
 
 #include <iostream>
 #include <limits.h>
+#include <sstream>
 #include <string.h>
+
 
 using namespace agora;
 using namespace pugi;
@@ -14,8 +16,9 @@ using namespace std;
 
 Feed::Feed() : feed(NULL), docRefs(*new unsigned char(1)), feedRefs(*new unsigned char(1)) {
 	id = "";
+	uri = "";
 	title = "";
-	updated = parseTime("");
+	updated = time(NULL);
 	author = "";
 	link = "";
 	description = "";
@@ -28,6 +31,7 @@ Feed::Feed(const Feed &f) : feed(f.feed), docRefs(f.docRefs), feedRefs(*new unsi
 	++docRefs;
 
 	id = f.id;
+	uri = f.uri;
 	title = f.title;
 	updated = f.updated;
 	author = f.author;
@@ -36,40 +40,51 @@ Feed::Feed(const Feed &f) : feed(f.feed), docRefs(f.docRefs), feedRefs(*new unsi
 	lang = f.lang;
 }
 
-/*! \param id    feed ID
- *  \param title title
+/*! \param data     data with which to initialize
+ *  \param language encoding of feed
  */
-Feed::Feed(const std::string &id, const std::string &title) : feed(NULL), docRefs(*new unsigned char(1)), feedRefs(*new unsigned char(1)) {
-	this->id = id;
-	this->title = title;
-	updated = parseTime("");
-
-	author = "";
-	link = "";
-	description = "";
-
-	lang = UNKNOWN_LANG;
+Feed::Feed(const Database::FeedData &data, agora::FeedLang language) : Feed() {
+	for (pair<const Database::Table::Feed, string> c : data) {
+		if (!c.second.empty()) {
+			switch (c.first) {
+				case Database::Table::Feed::ID          : id          = c.second;            break;
+				case Database::Table::Feed::URI         : uri         = c.second;            break;
+				case Database::Table::Feed::Title       : title       = c.second;            break;
+				case Database::Table::Feed::Updated     : updated     = parseTime(c.second); break;
+				case Database::Table::Feed::Link        : link        = c.second;            break;
+				case Database::Table::Feed::Author      : author      = c.second;            break;
+				case Database::Table::Feed::Description : description = c.second;            break;
+			}
+		}
+	}
+	lang = language;
 }
 
-/*! \param filename local file to parse
+/*! Will usually access remote feed; to refer to a local file, begin the path
+ *    with \c %file://
+ *
+ *  \param uri      file to parse
+ *  \param language encoding of feed
+ *
+ *  \warning If \c l is specified (not agora::UNKNOWN_LANG) but is not the
+ *             correct encoding, feed will be improperly parsed; usually better
+ *             to let the autodetection determine encoding.
  */
-Feed::Feed(std::string filename) : feed(new xml_document()), docRefs(*new unsigned char(1)), feedRefs(*new unsigned char(1)) {
-	feed->load_file(filename.c_str());
-
-	// Can't use getRoot because it needs to know the language
-	//   Could set it in that function, but then wouldn't be const
-	//! \todo Split off into a detectLang that will allow proper encapsulation
-	xml_node rss = feed->child("rss").child("channel");
-	xml_node atom = feed->child("feed");
-
-	if (rss.type()) {  // rss is not a null node
-		parseRss(rss);
-	} else if (atom.type() && !strcmp(atom.attribute("xmlns").value(), "http://www.w3.org/2005/Atom")) {  // atom not null node && atom.xmlns == ...
-		parseAtom(atom);
+Feed::Feed(const std::string &uri, agora::FeedLang language) : feed(new xml_document()), docRefs(*new unsigned char(1)), feedRefs(*new unsigned char(1)) {
+	Log << "compared value: " << uri.compare(0, 7, "file://") << Log.ENDL;
+	if (!uri.compare(0, 7, "file://", 0, string::npos)) {  // uri begins with "file://"
+		feed->load_file(uri.substr(7).c_str());
 	} else {
-		//! \todo Better error handling
-		cerr << "Invalid feed format" << endl;
+		istringstream data(download(uri));
+		feed->load(data);
 	}
+
+	this->uri = uri;
+
+	lang = language;  // initialize for getLang()
+	lang = getLang();
+
+	parse();
 }
 
 Feed::~Feed() {
@@ -119,14 +134,52 @@ void Feed::decrementCount() const {
 }
 
 
+/*! If Feed.lang set to UNKNOWN_LANG, will attempt to detect language based on document.
+ */
+agora::FeedLang Feed::getLang() const {
+	if (lang != UNKNOWN_LANG) {
+		return lang;
+	}
+
+	if (feed == NULL) {
+		//! \todo Implement WARNING level in log
+		Log << "getLang attempted language detection on Feed with null document reference" << Log.ENDL;
+		return UNKNOWN_LANG;
+	}
+	if (feed->child("rss").child("channel").type()) {  // not a null node
+		return RSS;
+	}
+	xml_node nodeFeed = feed->child("feed");
+	if (nodeFeed.type() && !strcmp(nodeFeed.attribute("xmlns").value(), "http://www.w3.org/2005/Atom")) {  // not null node && node.xmlns == ...
+		return ATOM;
+	}
+
+	//! \todo Implement WARNING level in log
+	Log << "Unable to detect feed language" << Log.ENDL;
+	return UNKNOWN_LANG;
+}
+
 xml_node Feed::getRoot() const {
 	if (lang == RSS) {
 		return feed->child("rss").child("channel");
 	} else if (lang == ATOM) {
 		return feed->child("feed");
 	}
-};
+}
 
+
+void Feed::parse() {
+	xml_node root = getRoot();
+
+	if (lang == RSS) {
+		parseRss(root);
+	} else if (lang == ATOM) {
+		parseAtom(root);
+	} else {
+		//! \todo Better error handling
+		cerr << "Invalid feed format" << endl;
+	}
+}
 
 void Feed::parseAtom(const xml_node &feed) {
 	Log << "Parsing feed as Atom...";
@@ -141,7 +194,7 @@ void Feed::parseAtom(const xml_node &feed) {
 	link = feed.child("link").attribute("href").value();
 	description = parseAtomTitle(feed.child("subtitle"));
 
-	updated = parseTime(feed.child_value("updated"));
+	updated = time(NULL);
 
 	// link == "" && id follows URL pattern
 	if (!link.compare("") && (!id.compare(0, 7, "http://") || !id.compare(0, 8, "https://"))) {
@@ -161,7 +214,7 @@ void Feed::parseRss(const xml_node &feed) {
 	id = link = feed.child_value("link");
 	title = feed.child_value("title");
 
-	updated = parseTime(feed.child_value("pubDate"));
+	updated = time(NULL);
 
 	if (!id.compare("")) {  // id == ""
 		//! \todo Generate unique id

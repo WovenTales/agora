@@ -2,7 +2,8 @@
 #define ARTICLE_H
 
 #include <agora.hxx>
-class Feed;
+#include <database.hxx>
+#include <feed.hxx>
 
 #include <pugixml.hpp>
 #include <string>
@@ -12,6 +13,8 @@ class Feed;
 //! A particular entry from some feed
 class Article {
   private:
+	//! Base form of constructor
+	Article(const Feed&);
 	//! Assignment operator
 	/*! \todo Make public (see Database for model) */
 	Article &operator=(const Article&);
@@ -33,17 +36,21 @@ class Article {
 	void parseAtom(const pugi::xml_node&);
 	//! Parse the article as RSS
 	void parseRss(const pugi::xml_node&);
+
+	//! Helper for constructing object
+	void parseArticleData(const Database::ArticleData&);
 	
   public:
 	//! Default constructor
-	Article();
+	Article() : Article(*new Feed) {};
 	//! Standard copy constructor
 	Article(const Article&);
 	//! Construct article from given node
 	Article(const pugi::xml_node&, const Feed&, const agora::FeedLang&);
 	//! Construct article using given parameters
-	Article(const std::string&, const std::string&, const std::string&, const std::string&, const time_t&,
-			const std::string& ="", const std::string& ="", const std::string& ="");
+	Article(const Database::ArticleData&, const std::string& = "");
+	//! \copybrief Article(const Database::ArticleData&, const std::string&)
+	Article(const Database::ArticleData&, const Feed&);
 	//! Standard destructor
 	virtual ~Article();
 
