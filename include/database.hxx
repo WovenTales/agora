@@ -23,120 +23,83 @@ class Feed;
 /*! \todo Update so can have const Database instances (everything complains about exec not being const) */
 class Database {
   public:
-	//! Column declarations
-	struct Table {
+	//! Lookup table for info on tables in database
+	struct ColumnWrapper {
 	  public:
-		friend class Database;
+		//! Encapsulation of information on table columns to allow dynamic generation
+		struct ColumnData {
+		  private:
+			//! Default constructor
+			ColumnData();
 
-		// When adding new column to any enum, don't forget to add corresponding
-		//   name to table in src/database.cxx and object constructor!
+		  public:
+			/*! \warning Not necessarily unique; also consider \ref table to guarentee uniqueness. */
+			const std::string name;    //!< Reference name of column
+			/*! If different from the enclosing ColumnWrapper::table, indicates a link
+			 *    to the column of the same name in the specified table.
+			 *
+			 *  \todo May want to create secondary reference to actual table
+			 *          (table:column identifies in database, name:t2 identifies object)
+			 */
+			const std::string table;   //!< Table in which primary column is located
 
-		//! Article parameters
-		enum struct Article {
-			ID,
-			FeedID,
-			Title,
-			Updated,
-			Link,
-			Author,
-			Summary,
-			Content
+			const std::string column;  //!< Name in SQLite database
+			/*! \todo Make function pointer */
+			const bool        update;  //!< Whether to preform simple automatic update on column
+
+			//! Standard constructor
+			/*! \todo Find way of linking ColumnData::name to ColumnWrapper::columns.first automatically
+			 */
+			ColumnData(const std::string &n, const std::string &t, const std::string &c, bool u) :
+			                 name(n),              table(t),             column(c),      update(u) {};
 		};
-		//! \copybrief column(Meta)
-		static std::string column(Article);
-		//! \copybrief table(Meta)
-		static std::string table(Article) { return "articles"; };
-
-		//! Feed parameters
-		enum struct Feed {
-			ID,
-			URI,
-			Title,
-			Updated,
-			Link,
-			Author,
-			Description
-		};
-		//! \copybrief column(Meta)
-		static std::string column(Feed);
-		//! \copybrief table(Meta)
-		static std::string table(Feed) { return "feeds"; };
-
-		//! Meta table parameters
-		enum struct Meta {
-			Title,
-			Version
-		};
-		//! Retrieve unique referent for SQLite database
-		static std::string column(Meta);
-		//! Retrieve table name for SQLite database
-		static std::string table(Meta) { return "meta"; };
-
-		//! Generic reference to columns
-		/*! \tparam T Relevant \b enum of table columns */
-		template <typename T> using Unified = T;
 
 	  private:
-		//! Provide a means to determine equality of columns
-		/*! \copydetails Table::Unified */
-		template <typename T>
-		struct table_hash_eq {
-			//! \cond
-			//! Internal use only
-			std::size_t operator() (T a) const { return std::hash<int>()(int(a)); };
-			//! Internal use only
-			bool operator() (T a, T b) const { return (int(a) == int(b)); };
-			//! \endcond
+		//! Default constructor
+		ColumnWrapper();
+
+		//! Name of table in database
+		const std::string table;
+		//! Main data storage
+		const std::unordered_map<std::string, const ColumnData> columns;
+
+		//! Provide means of more easily filling \ref columns
+		std::unordered_map<std::string, const ColumnData> &generateMap(const std::vector<ColumnData>&);
+
+		//! Provide a means to hash columns
+		struct column_hash_eq {
+			//! Hash function
+			std::size_t operator() (ColumnData a) const { return std::hash<std::string>()(a.table + ":" + a.column); };
+			//! Equality function
+			bool operator() (ColumnData a, ColumnData b) const { return ((a.table == b.table) && (a.column == b.column)); };
 		};
+
+	  public:
+		ColumnWrapper(const std::string &t, const std::vector<ColumnData> &data) :
+			table(t), columns(generateMap(data)) {};
+
+		//! Element access operator
+		const ColumnData &operator [](const std::string &ref) { return columns.at(ref); };
+
 		//! Simplify hash map construction
-		/*! \todo Document template params */
-		template < typename T,
-			   typename MAPPED_TYPE,
-			   typename ALLOCATOR_TYPE = std::allocator<std::pair<const T, MAPPED_TYPE> > >
-		using table_hash_map = std::unordered_map<T, MAPPED_TYPE, table_hash_eq<T>, table_hash_eq<T>, ALLOCATOR_TYPE>;
+		/*! \tparam MAPPED_TYPE    the type of object each key references
+		 *  \tparam ALLOCATOR_TYPE the type of allocator object for storage
+		 */
+		template < typename MAPPED_TYPE,
+			   typename ALLOCATOR_TYPE = std::allocator<std::pair<const ColumnData, MAPPED_TYPE> > >
+		using column_hash_map = std::unordered_map<ColumnData, MAPPED_TYPE, column_hash_eq, column_hash_eq, ALLOCATOR_TYPE>;
 	};
 
-	//! Mappings of (column name) -> (data)
+	//! Mappings of (ColumnWrapper::ColumnData) -> (data)
 	/*! Represents a lower-level representation of a returned database query.
-	 *  \copydetails Table::Unified
 	 */
-	template <typename T> using Data     = Table::table_hash_map<Table::Unified<T>, std::string>;
+	typedef ColumnWrapper::column_hash_map<std::string> Data;
 	//! Short name for collecting multiple sets of column Data
-	/*! \copydetails Table::Unified */
-	template <typename T> using DataList = std::vector<Data<T> >;
-
-	//! \copybrief MetaData
-	typedef Data<Table::Article> ArticleData;
-	//! \copybrief MetaData
-	typedef Data<Table::Feed>    FeedData;
-	//! Utility specification of Data
-	typedef Data<Table::Meta>    MetaData;
-
-	//! \copybrief MetaDataList
-	typedef DataList<Table::Article> ArticleDataList;
-	//! \copybrief MetaDataList
-	typedef DataList<Table::Feed>    FeedDataList;
-	//! Utility specification of DataList
-	typedef DataList<Table::Meta>    MetaDataList;
+	typedef std::vector<Data> DataList;
 
   private:
-	//! Encapsulation of information on table columns to allow dynamic generation
-	struct ColumnData {
-		std::string name;    //!< Name in SQLite database
-		/*! \todo Make function pointer */
-		bool        update;  //!< Whether to preform simple automatic update on column
-	};
-
 	//! Core SQLite3 database pointer
 	sqlite3 *db;
-
-	/*! \todo Move to respective objects, along with column struct */
-	//! \copybrief MetaColumnName
-	static const Table::table_hash_map<Database::Table::Article, Database::ColumnData> ArticleColumnName;
-	//! \copybrief MetaColumnName
-	static const Table::table_hash_map<Database::Table::Feed, Database::ColumnData>    FeedColumnName;
-	//! Provide a lookup for SQLite database names
-	static const Table::table_hash_map<Database::Table::Meta, Database::ColumnData>    MetaColumnName;
 
 	//! List of changes to save to the database
 	std::queue<const Article*> articleStage;
@@ -168,6 +131,9 @@ class Database {
 
 	//! Assignment operator
 	Database &operator=(const Database&);
+
+	//! Representation of table \c meta
+	static const ColumnWrapper columns;
 
 	//! Get title assigned to database
 	std::string getTitle() const;

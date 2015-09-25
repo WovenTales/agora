@@ -10,6 +10,18 @@ using namespace pugi;
 using namespace std;
 
 
+const Database::ColumnWrapper Feed::columns("articles", {
+	{ "id",      "articles", "aID",      false },
+	{ "feed",    "feeds",    "fID",      false },
+	{ "title",   "articles", "aTitle",   true  },
+	{ "updated", "articles", "aUpdated", false },
+	{ "link",    "articles", "aLink",    true  },
+	{ "author",  "articles", "aAuthor",  true  },
+	{ "summary", "articles", "aSummary", true  },
+	{ "content", "articles", "aContent", true  }
+	});
+
+
 /*! Sets all parameters to empty string or equivalent.
  */
 Article::Article(const Feed &p) : parent(p) {
@@ -51,9 +63,11 @@ Article::Article(const pugi::xml_node &entry, const Feed &feed, const FeedLang &
 	}
 }
 
-void Article::parseArticleData(const Database::ArticleData &data) {
-	for (pair<const Database::Table::Article, string> c : data) {
+void Article::parseArticleData(const Database::Data &data) {
+	for (pair<Database::ColumnWrapper::ColumnData, string> c : data) {
 		if (!c.second.empty()) {
+			// Switch on ColumnData to set values
+			/*
 			switch (c.first) {
 				case Database::Table::Article::ID      : id      = c.second;            break;
 				case Database::Table::Article::Title   : title   = c.second;            break;
@@ -63,19 +77,20 @@ void Article::parseArticleData(const Database::ArticleData &data) {
 				case Database::Table::Article::Summary : summary = c.second;            break;
 				case Database::Table::Article::Content : content = c.second;            break;
 			}
+			*/
 		}
 	}
 }
 /*! \param data data with which to initialize
  *  \param fID  ID of the parent feed
  */
-Article::Article(const Database::ArticleData &data, const std::string &fID) : Article(*new Feed({{ Database::Table::Feed::ID, fID }})) {
+Article::Article(const Database::Data &data, const std::string &fID) : Article(*new Feed({{ Database::Table::Feed::ID, fID }})) {
 	parseArticleData(data);
 }
 /*! \param data data with which to initialize
  *  \param p    feed to link as parent
  */
-Article::Article(const Database::ArticleData &data, const Feed &p) : Article(p) {
+Article::Article(const Database::Data &data, const Feed &p) : Article(p) {
 	parseArticleData(data);
 }
 

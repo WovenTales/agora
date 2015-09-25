@@ -49,11 +49,14 @@ class Feed {
 	//! Copy constructor
 	Feed(const Feed&);
 	//! Build feed manually
-	Feed(const Database::FeedData&, agora::FeedLang = agora::UNKNOWN_LANG);
+	Feed(const Database::Data&, agora::FeedLang = agora::UNKNOWN_LANG);
 	//! Construct feed from file
 	Feed(const std::string&, agora::FeedLang = agora::UNKNOWN_LANG);
 	//! Standard destructor
 	virtual ~Feed();
+
+	//! Representation of table \c feeds
+	static const Database::ColumnWrapper columns;
 
 	//! \return \copybrief author
 	/*! \todo Do something different with getters ("Returns \\copybrief"?) so is brief description rather than return statement (improper order of docs) */
@@ -72,6 +75,8 @@ class Feed {
 	std::string     getTitle()       const { return title; };
 	//! \return \copybrief updated
 	time_t          getUpdateTime()  const { return updated; };
+	//! \return \copybrief uri
+	std::string     getURI()         const { return uri; };
 
 	//! \param id new ID string
 	void setID(const std::string &id) { this->id = id; };

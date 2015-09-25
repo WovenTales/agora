@@ -14,6 +14,17 @@ using namespace pugi;
 using namespace std;
 
 
+const Database::ColumnWrapper Feed::columns("feeds", {
+	{ "id",          "feeds", "fID",      false },
+	{ "uri",         "feeds", "fURI",     false },
+	{ "title",       "feeds", "fTitle",   true  },  //!< \todo Implement and check for user-specified title
+	{ "updated",     "feeds", "fUpdated", false },
+	{ "link",        "feeds", "fLink",    true  },
+	{ "author",      "feeds", "fAuthor",  true  },  //!< \todo Change all feeds using (previous) default author on update
+	{ "description", "feeds", "fDesc",    true  }
+	});
+
+
 Feed::Feed() : feed(NULL), docRefs(*new unsigned char(1)), feedRefs(*new unsigned char(1)) {
 	id = "";
 	uri = "";

@@ -38,7 +38,7 @@ class Article {
 	void parseRss(const pugi::xml_node&);
 
 	//! Helper for constructing object
-	void parseArticleData(const Database::ArticleData&);
+	void parseArticleData(const Database::Data&);
 	
   public:
 	//! Default constructor
@@ -48,11 +48,14 @@ class Article {
 	//! Construct article from given node
 	Article(const pugi::xml_node&, const Feed&, const agora::FeedLang&);
 	//! Construct article using given parameters
-	Article(const Database::ArticleData&, const std::string& = "");
+	Article(const Database::Data&, const std::string& = "");
 	//! \copybrief Article(const Database::ArticleData&, const std::string&)
-	Article(const Database::ArticleData&, const Feed&);
+	Article(const Database::Data&, const Feed&);
 	//! Standard destructor
 	virtual ~Article();
+
+	//! Representation of table \c articles
+	static const Database::ColumnWrapper columns;
 
 	//! \return \copybrief author
 	std::string getAuthor()     const { return author; };  

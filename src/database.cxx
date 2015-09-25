@@ -12,48 +12,61 @@ using namespace pugi;
 using namespace std;
 
 
-// Note that column names shared between different tables will be automatically matched on lookup
-const Database::Table::table_hash_map<Database::Table::Article, Database::ColumnData> Database::ArticleColumnName = {
-	{ Table::Article::ID,       { "aID",      false } },
-	{ Table::Article::FeedID,   { "fID",      false } },
-	{ Table::Article::Title,    { "aTitle",   true  } },
-	{ Table::Article::Updated,  { "aUpdated", false } },
-	{ Table::Article::Link,     { "aLink",    true  } },
-	{ Table::Article::Author,   { "aAuthor",  true  } },
-	{ Table::Article::Summary,  { "aSummary", true  } },
-	{ Table::Article::Content,  { "aContent", true  } }
-};
-/*! \param a Table::Article column to look up
- */
-std::string Database::Table::column(Database::Table::Article a) {
-	return Database::ArticleColumnName.at(a).name;
+
+//! Note that Meta columns are not updated, and so that column has no effect.
+const Database::ColumnWrapper Database::columns("meta", {
+	{ "title",   "meta", "title",   false },
+	{ "version", "meta", "version", false }
+	});
+
+
+
+std::unordered_map<const std::string, const Database::ColumnWrapper::ColumnData>
+		&Database::ColumnWrapper::generateMap(const std::vector<const Database::ColumnWrapper::ColumnData> &data) {
+	unordered_map<const string, const ColumnWrapper::ColumnData> out;
+
+	for (ColumnWrapper::ColumnData c : data) {
+		out[c.name] = c;
+	}
+
+	return out;
 }
 
-const Database::Table::table_hash_map<Database::Table::Feed, Database::ColumnData>    Database::FeedColumnName = {
-	{ Table::Feed::ID,          { "fID",      false } },
-	{ Table::Feed::URI,         { "fURI",     false } },
-	{ Table::Feed::Title,       { "fTitle",   true  } },  //!< \todo Implement and check for user-specified title
-	{ Table::Feed::Updated,     { "fUpdated", false } },
-	{ Table::Feed::Link,        { "fLink",    true  } },
-	{ Table::Feed::Author,      { "fAuthor",  true  } },  //!< \todo Change all feeds using (previous) default author
-	{ Table::Feed::Description, { "fDesc",    true  } }
-};
-/*! \param f Table::Feed column to look up
+//! Obtain a ColumnWrapper::ColumnData from a SQLite column name
+/*! \todo Try to reduce redundancy
+ *
+ *  \param name SQLite name to parse
  */
-std::string Database::Table::column(Database::Table::Feed f) {
-	return Database::FeedColumnName.at(f).name;
+const Database::ColumnWrapper::ColumnData &Database::ColumnWrapper::parseColumn(const std::string &table, const std::string &col) {
+	const ColumnWrapper list = parseTable(table);
+	//! \todo Handle column not found
+	return list[col];
+}
+const Database::ColumnWrapper::ColumnData &Database::ColumnWrapper::parseColumn(const std::string &col) {
+	/*! \todo Iterate through some vector<const ColumnWrapper*> listing tables
+	 *          trying c[col] to find match
+	 */
+	return Database::columns["title"]
+}
+const Database::ColumnWrapper &Database::ColumnWrapper::parseTable(const std::string &table) {
+	const ColumnWrapper *out = NULL;
+
+	//! \todo Iterate through some vector<const ColumnWrapper*> listing tables
+	if (!table.compare("articles")) {     // table == "articles"
+		out = &(Article::columns);
+	} else if (!table.compare("feeds")) { // table == "feeds"
+		out = &(Feed::columns);
+	} else if (!table.compare("meta")) {  // table == "meta"
+		out = &(Database::columns);
+	}
+
+	if (out == NULL) {
+		//! \todo Throw error
+	}
+
+	return *out;
 }
 
-// Note that Meta columns are not updated, and so second column has no effect
-const Database::Table::table_hash_map<Database::Table::Meta, Database::ColumnData>    Database::MetaColumnName = {
-	{ Table::Meta::Title,       { "title",    false } },
-	{ Table::Meta::Version,     { "version",  false } }
-};
-/*! \param m Table::Meta column to look up
- */
-std::string Database::Table::column(Database::Table::Meta m) {
-	return Database::MetaColumnName.at(m).name;
-}
 
 
 Database::Database() : db(NULL), count(*new unsigned char(1)) {
@@ -150,6 +163,8 @@ Feed Database::getFeed(const std::string &id) const {
  *          Note that time of last update will always be changed to current time
  */
 void Database::updateFeed(const std::string &id) {
+	Feed local = getFeed(id);
+	Feed remote(local.getURI(), local.getLang());
 	//! \todo Adapt to new location and complete
 	/*
 	Feed remote(uri, lang);
@@ -246,6 +261,99 @@ void Database::open(const std::string &filename) {
 		exec(meta.append(feeds).append(articles).c_str());
 		Log << "New database initialized" << Log.ENDL;
 	}
+}
+
+
+//! Lookup specified columns in database
+/*! If \c cols is an empty initializer_list, selects all columns matching \c where.
+ *  Any columns in \c where that aren't in the same table as anything in \c cols are ignored.
+ *
+ *  \bug As it is, this might only allow a single T (i.e. only columns from a single table, rather than combining them)
+ *
+ *  \param cols  list of \link Database::Table Database::Table::Column\endlink objects to select
+ *  \param where pairs of (\link Database::Table Database::Table::Column\endlink, match_string); optional unless \c cols is empty
+ */
+DataList &getColumns(const std::initializer_list<ColumnWrapper::ColumnData> &cols,
+                     const std::initializer_list<std::pair<const ColumnWrapper::ColumnData, std::string> > &where = {}) const {
+	DataList out;
+
+	// If no restrictions are passed
+	if (!cols.size() && !where.size()) {
+		return out;
+	}
+
+	std::vector<std::string> tables;
+
+	std::string cmdColumn;
+	std::string cmdTables;
+	std::string cmdWhere;
+
+	// For each column requested
+	bool firstCol = true;
+	string t;
+	for (ColumnWrapper::ColumnData c : cols) {
+		t = c.table;
+
+		// If c's containing table is not already in tables
+		if (find(tables.begin(), tables.end(), t) == tables.end()) {
+			tables.push_back(t);
+		}
+
+		// Add column to command
+		if (firstCol) {
+			cmdColumn = c.column;
+			firstCol = false;
+		} else {
+			cmdColumn.append("," + c.column);
+		}
+	}
+
+	// For each search restriction
+	firstCol = true;
+	for (std::pair<const ColumnWrapper::ColumnData, std::string> w : where) {
+		t = w.first.table;
+
+		// Whether any particular columns were requested
+		bool colsEmpty = (cols.size() == 0);
+		// Whether w's containing table is in tables
+		//! \todo Ensure proper handling of linked columns
+		bool tInTables = (find(tables.begin(), tables.end(), t) != tables.end());
+
+		// Block only relevant if w refers to an involved table, or if we're wanting entire table
+		if (colsEmpty || tInTables) {
+			// We're selecting all columns, but t isn't yet being requested
+			if (colsEmpty && !tInTables) {
+				tables.push_back(t);
+			}
+
+			// Add restriction to command
+			if (firstCol) {
+				cmdWhere = " WHERE ";
+				firstCol = false;
+			} else {
+				cmdWhere.append(" AND ");
+			}
+			cmdWhere.append(w.first.column + " = '" + agora::replaceAll(w.second, "'", "''") + "'");
+		}
+	}
+
+	// Join all involved tables
+	firstCol = true;
+	for (t : tables) {
+		if (firstCol) {
+			cmdTables = t;
+			firstCol = false;
+		} else {
+			cmdTables.append(" NATURAL JOIN " + t);
+		}
+	}
+
+	std::string cmd = "SELECT " + (cols.size() ? cmdColumn : "*") + " FROM " + cmdTables + cmdWhere + ";";
+
+	// Execute the compiled command
+	Log << "Looking for columns following command '" << cmd << "'" << Log.ENDL;
+	sqlite3_exec(db, cmd.c_str(), (int (*)(void*, int, char**, char**))getEntries, &out, NULL);
+	return out;
 }
 
 
@@ -409,6 +517,21 @@ void Database::save() {
 void Database::exec(const std::string &cmd) {
 	sqlite3_exec(db, cmd.c_str(), NULL, NULL, NULL);
 }
+
+//! Convert SQLite results to a usable DataList
+/*! For use in sqlite3_exec() calls.
+ *
+ *  \todo Document params
+ */
+static int getEntries(Database::DataList *out, int cols, char *data[], char *colNames[]) {
+	Data m;
+	for (int i = 0; i < cols; i++) {
+		m[parseColumn(colNames[i])] = (data[i] ? agora::replaceAll(data[i], "''", "'") : "");
+	}
+
+	out->push_back(m);
+	return 0;  // Successful call
+};
 
 /*! For use in sqlite3_exec() calls.
  *
