@@ -14,7 +14,7 @@ using namespace pugi;
 using namespace std;
 
 
-const Database::ColumnWrapper Feed::columns("feeds", {
+const Database::Table Feed::columns("feeds", {
 	{ "id",          "feeds", "fID",      false },
 	{ "uri",         "feeds", "fURI",     false },
 	{ "title",       "feeds", "fTitle",   true  },  //!< \todo Implement and check for user-specified title
@@ -54,9 +54,11 @@ Feed::Feed(const Feed &f) : feed(f.feed), docRefs(f.docRefs), feedRefs(*new unsi
 /*! \param data     data with which to initialize
  *  \param language encoding of feed
  */
-Feed::Feed(const Database::FeedData &data, agora::FeedLang language) : Feed() {
-	for (pair<const Database::Table::Feed, string> c : data) {
+Feed::Feed(const Database::Data &data, agora::FeedLang language) : Feed() {
+	for (pair<const Database::Table::Column, string> c : data) {
 		if (!c.second.empty()) {
+			//! \todo Switch on Column to set values
+			/*
 			switch (c.first) {
 				case Database::Table::Feed::ID          : id          = c.second;            break;
 				case Database::Table::Feed::URI         : uri         = c.second;            break;
@@ -66,6 +68,7 @@ Feed::Feed(const Database::FeedData &data, agora::FeedLang language) : Feed() {
 				case Database::Table::Feed::Author      : author      = c.second;            break;
 				case Database::Table::Feed::Description : description = c.second;            break;
 			}
+			*/
 		}
 	}
 	lang = language;

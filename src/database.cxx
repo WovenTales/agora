@@ -13,55 +13,111 @@ using namespace std;
 
 
 
-//! Note that Meta columns are not updated, and so that column has no effect.
-const Database::ColumnWrapper Database::columns("meta", {
+/*! Note that Meta columns are not updated, and so that column has no effect.
+ */
+const Database::Table Database::meta("meta", {
 	{ "title",   "meta", "title",   false },
 	{ "version", "meta", "version", false }
 	});
 
+const Database::Table::List Database::tables = { &Database::meta, &Article::columns, &Feed::columns };
 
 
-std::unordered_map<const std::string, const Database::ColumnWrapper::ColumnData>
-		&Database::ColumnWrapper::generateMap(const std::vector<const Database::ColumnWrapper::ColumnData> &data) {
-	unordered_map<const string, const ColumnWrapper::ColumnData> out;
 
-	for (ColumnWrapper::ColumnData c : data) {
-		out[c.name] = c;
+/*! Essentially, extracts Column.name from each object, and files it in the map
+ *    under that same string.
+ *
+ *  \param data List of Column objects with which to populate the map
+ *
+ *  \return a map prepared for direct assignment to \ref columns
+ */
+std::unordered_map<std::string, const Database::Table::Column> Database::Table::generateMap(const std::vector<Database::Table::Column> &data) {
+	unordered_map<string, const Column> out;
+
+	for (Column c : data) {
+		out.emplace(c.name, c);
 	}
 
 	return out;
 }
 
-//! Obtain a ColumnWrapper::ColumnData from a SQLite column name
-/*! \todo Try to reduce redundancy
- *
- *  \param name SQLite name to parse
- */
-const Database::ColumnWrapper::ColumnData &Database::ColumnWrapper::parseColumn(const std::string &table, const std::string &col) {
-	const ColumnWrapper list = parseTable(table);
-	//! \todo Handle column not found
-	return list[col];
-}
-const Database::ColumnWrapper::ColumnData &Database::ColumnWrapper::parseColumn(const std::string &col) {
-	/*! \todo Iterate through some vector<const ColumnWrapper*> listing tables
-	 *          trying c[col] to find match
-	 */
-	return Database::columns["title"]
-}
-const Database::ColumnWrapper &Database::ColumnWrapper::parseTable(const std::string &table) {
-	const ColumnWrapper *out = NULL;
 
-	//! \todo Iterate through some vector<const ColumnWrapper*> listing tables
-	if (!table.compare("articles")) {     // table == "articles"
-		out = &(Article::columns);
-	} else if (!table.compare("feeds")) { // table == "feeds"
-		out = &(Feed::columns);
-	} else if (!table.compare("meta")) {  // table == "meta"
-		out = &(Database::columns);
+/*! \param col SQLite name to parse
+ *
+ *  \return a Table::Column representing the column with the given SQLite name
+ */
+const Database::Table::Column &Database::Table::parseColumn(const std::string &col) const {
+	const Column *out = NULL, *c;
+
+	auto end = columns.cend();
+	for (auto it = columns.cbegin(); it != end; ++it) {
+		c = &(it->second);
+
+		if (!c->column.compare(col)) {  // c.column == col
+			if (out != NULL) {
+				//! \todo Throw error: multiple columns with same SQLite name
+			}
+			out = c;
+		}
 	}
 
 	if (out == NULL) {
-		//! \todo Throw error
+		//! \todo Throw error: no such column found
+	}
+
+	return *out;
+}
+
+/*! If the column is linked in multiple tables, will return the primary column.
+ *
+ *  \param list the List of tables in which to search
+ *  \param col  SQLite name to parse
+ *
+ *  \return a Table::Column representing the primary column with the given SQLite name
+ */
+const Database::Table::Column &Database::Table::parseColumn(const Database::Table::List &list, const std::string &col) {
+	const Column *out = NULL, *c;
+
+	for (const Table *t : list) {
+		//! \todo Ensure that catching No such column exception once implemented, and set c = NULL in that case
+		c = &(t->parseColumn(col));
+
+		if (c != NULL) {
+			if (out == NULL) {
+				//! Retrieve primary column
+				out = &(parseTable(list, c->table)[col]);
+			} else if (out->table.compare(c->table)) {  // out.table != c.table
+				//! \todo Throw error: multiple primary columns with same SQLite name
+			}
+		}
+	}
+
+	if (out == NULL) {
+		//! \todo Throw error: no such column found
+	}
+
+	return *out;
+}
+
+/*! \param list  the List of tables is which to search
+ *  \param table the table to search for
+ *
+ *  \return a Table representing that with the given SQLite name
+ */
+const Database::Table &Database::Table::parseTable(const Database::Table::List &list, const std::string &table) {
+	const Table *out = NULL;
+
+	for (const Table *t : list) {
+		if (!t->table.compare(table)) {  // name(t) == table
+			if (out != NULL) {
+				//! \todo Throw error: multiple identically-named tables
+			}
+			out = t;
+		}
+	}
+
+	if (out == NULL) {
+		//! \todo Throw error: no such table found
 	}
 
 	return *out;
@@ -113,12 +169,6 @@ Database &Database::operator=(const Database &d) {
 }
 
 
-std::string Database::getTitle() const {
-	MetaDataList out = getColumns<Table::Meta>({ Table::Meta::Title });
-	return replaceAll(out[0][Table::Meta::Title], "''", "'");
-}
-
-
 /*! If database doesn't contain given ID, returns an Article with default values
  *    (mostly empty strings) for all members.
  *
@@ -128,7 +178,7 @@ std::string Database::getTitle() const {
 Article Database::getArticle(const std::string &id) const {
 	Log << "Requesting article with id '" << id << "'..." << (Log.ENDL | Log.CONTINUE) << "    ";
 
-	ArticleDataList rows = getColumns<Table::Article>({}, {{ Table::Article::ID, id }});
+	DataList rows = getColumns({}, {{ Article::columns["id"], id }});
 
 	if (!rows.size()) {  // rows.size() == 0
 		Log << "    No such article found" << Log.ENDL;
@@ -148,7 +198,7 @@ Article Database::getArticle(const std::string &id) const {
 Feed Database::getFeed(const std::string &id) const {
 	Log << "Requesting feed with id '" << id << "'..." << (Log.ENDL | Log.CONTINUE) << "    ";
 
-	FeedDataList rows = getColumns<Table::Feed>({}, {{ Table::Feed::ID, id }});
+	DataList rows = getColumns({}, {{ Feed::columns["id"], id }});
 
 	if (!rows.size()) {  // rows.size() == 0
 		Log << "    No such article found" << Log.ENDL;
@@ -264,7 +314,6 @@ void Database::open(const std::string &filename) {
 }
 
 
-//! Lookup specified columns in database
 /*! If \c cols is an empty initializer_list, selects all columns matching \c where.
  *  Any columns in \c where that aren't in the same table as anything in \c cols are ignored.
  *
@@ -273,8 +322,8 @@ void Database::open(const std::string &filename) {
  *  \param cols  list of \link Database::Table Database::Table::Column\endlink objects to select
  *  \param where pairs of (\link Database::Table Database::Table::Column\endlink, match_string); optional unless \c cols is empty
  */
-DataList &getColumns(const std::initializer_list<ColumnWrapper::ColumnData> &cols,
-                     const std::initializer_list<std::pair<const ColumnWrapper::ColumnData, std::string> > &where = {}) const {
+Database::DataList Database::getColumns(const std::initializer_list<Database::Table::Column> &cols,
+                                        const std::initializer_list< std::pair<const Database::Table::Column, std::string> > &where) const {
 	DataList out;
 
 	// If no restrictions are passed
@@ -282,16 +331,16 @@ DataList &getColumns(const std::initializer_list<ColumnWrapper::ColumnData> &col
 		return out;
 	}
 
-	std::vector<std::string> tables;
+	vector<string> tables;
 
-	std::string cmdColumn;
-	std::string cmdTables;
-	std::string cmdWhere;
+	string cmdColumn;
+	string cmdTables;
+	string cmdWhere;
 
 	// For each column requested
 	bool firstCol = true;
 	string t;
-	for (ColumnWrapper::ColumnData c : cols) {
+	for (Table::Column c : cols) {
 		t = c.table;
 
 		// If c's containing table is not already in tables
@@ -310,7 +359,7 @@ DataList &getColumns(const std::initializer_list<ColumnWrapper::ColumnData> &col
 
 	// For each search restriction
 	firstCol = true;
-	for (std::pair<const ColumnWrapper::ColumnData, std::string> w : where) {
+	for (pair<const Table::Column, string> w : where) {
 		t = w.first.table;
 
 		// Whether any particular columns were requested
@@ -339,16 +388,16 @@ DataList &getColumns(const std::initializer_list<ColumnWrapper::ColumnData> &col
 
 	// Join all involved tables
 	firstCol = true;
-	for (t : tables) {
+	for (string ta : tables) {
 		if (firstCol) {
-			cmdTables = t;
+			cmdTables = ta;
 			firstCol = false;
 		} else {
-			cmdTables.append(" NATURAL JOIN " + t);
+			cmdTables.append(" NATURAL JOIN " + ta);
 		}
 	}
 
-	std::string cmd = "SELECT " + (cols.size() ? cmdColumn : "*") + " FROM " + cmdTables + cmdWhere + ";";
+	string cmd = "SELECT " + (cols.size() ? cmdColumn : "*") + " FROM " + cmdTables + cmdWhere + ";";
 
 	// Execute the compiled command
 	Log << "Looking for columns following command '" << cmd << "'" << Log.ENDL;
@@ -518,15 +567,15 @@ void Database::exec(const std::string &cmd) {
 	sqlite3_exec(db, cmd.c_str(), NULL, NULL, NULL);
 }
 
-//! Convert SQLite results to a usable DataList
+
 /*! For use in sqlite3_exec() calls.
  *
  *  \todo Document params
  */
-static int getEntries(Database::DataList *out, int cols, char *data[], char *colNames[]) {
+int Database::getEntries(Database::DataList *out, int cols, char *data[], char *colNames[]) {
 	Data m;
 	for (int i = 0; i < cols; i++) {
-		m[parseColumn(colNames[i])] = (data[i] ? agora::replaceAll(data[i], "''", "'") : "");
+		m[Table::parseColumn(tables, colNames[i])] = (data[i] ? agora::replaceAll(data[i], "''", "'") : "");
 	}
 
 	out->push_back(m);

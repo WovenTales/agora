@@ -10,7 +10,7 @@ using namespace pugi;
 using namespace std;
 
 
-const Database::ColumnWrapper Feed::columns("articles", {
+const Database::Table Article::columns("articles", {
 	{ "id",      "articles", "aID",      false },
 	{ "feed",    "feeds",    "fID",      false },
 	{ "title",   "articles", "aTitle",   true  },
@@ -64,9 +64,9 @@ Article::Article(const pugi::xml_node &entry, const Feed &feed, const FeedLang &
 }
 
 void Article::parseArticleData(const Database::Data &data) {
-	for (pair<Database::ColumnWrapper::ColumnData, string> c : data) {
+	for (pair<const Database::Table::Column, string> c : data) {
 		if (!c.second.empty()) {
-			// Switch on ColumnData to set values
+			//! \todo Switch on Column to set values
 			/*
 			switch (c.first) {
 				case Database::Table::Article::ID      : id      = c.second;            break;
@@ -84,7 +84,7 @@ void Article::parseArticleData(const Database::Data &data) {
 /*! \param data data with which to initialize
  *  \param fID  ID of the parent feed
  */
-Article::Article(const Database::Data &data, const std::string &fID) : Article(*new Feed({{ Database::Table::Feed::ID, fID }})) {
+Article::Article(const Database::Data &data, const std::string &fID) : Article(*new Feed({{ Feed::columns["id"], fID }})) {
 	parseArticleData(data);
 }
 /*! \param data data with which to initialize

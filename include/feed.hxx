@@ -56,7 +56,7 @@ class Feed {
 	virtual ~Feed();
 
 	//! Representation of table \c feeds
-	static const Database::ColumnWrapper columns;
+	static const Database::Table columns;
 
 	//! \return \copybrief author
 	/*! \todo Do something different with getters ("Returns \\copybrief"?) so is brief description rather than return statement (improper order of docs) */

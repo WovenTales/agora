@@ -3,7 +3,7 @@
 private:
 
 //! Discard unsaved changes from a stage
-/*! \todo Document template parameters
+/*! \tparam T type contained by the stage to clear
  *
  *  \param stage the stage to clear
  */

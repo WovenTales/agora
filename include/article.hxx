@@ -55,7 +55,7 @@ class Article {
 	virtual ~Article();
 
 	//! Representation of table \c articles
-	static const Database::ColumnWrapper columns;
+	static const Database::Table columns;
 
 	//! \return \copybrief author
 	std::string getAuthor()     const { return author; };  
