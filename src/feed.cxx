@@ -15,13 +15,13 @@ using namespace std;
 
 
 const Database::Table Feed::columns("feeds", {
-	{ "id",          "feeds", "fID",      false },
-	{ "uri",         "feeds", "fURI",     false },
-	{ "title",       "feeds", "fTitle",   true  },  //!< \todo Implement and check for user-specified title
-	{ "updated",     "feeds", "fUpdated", false },
-	{ "link",        "feeds", "fLink",    true  },
-	{ "author",      "feeds", "fAuthor",  true  },  //!< \todo Change all feeds using (previous) default author on update
-	{ "description", "feeds", "fDesc",    true  }
+	{ "id",      "feeds", "fID",      false },
+	{ "uri",     "feeds", "fURI",     false },
+	{ "title",   "feeds", "fTitle",   true  },  //!< \todo Implement and check for user-specified title
+	{ "updated", "feeds", "fUpdated", false },
+	{ "link",    "feeds", "fLink",    true  },
+	{ "author",  "feeds", "fAuthor",  true  },  //!< \todo Change all feeds using (previous) default author on update
+	{ "desc",    "feeds", "fDesc",    true  }
 	});
 
 
@@ -57,18 +57,13 @@ Feed::Feed(const Feed &f) : feed(f.feed), docRefs(f.docRefs), feedRefs(*new unsi
 Feed::Feed(const Database::Data &data, agora::FeedLang language) : Feed() {
 	for (pair<const Database::Table::Column, string> c : data) {
 		if (!c.second.empty()) {
-			//! \todo Switch on Column to set values
-			/*
-			switch (c.first) {
-				case Database::Table::Feed::ID          : id          = c.second;            break;
-				case Database::Table::Feed::URI         : uri         = c.second;            break;
-				case Database::Table::Feed::Title       : title       = c.second;            break;
-				case Database::Table::Feed::Updated     : updated     = parseTime(c.second); break;
-				case Database::Table::Feed::Link        : link        = c.second;            break;
-				case Database::Table::Feed::Author      : author      = c.second;            break;
-				case Database::Table::Feed::Description : description = c.second;            break;
-			}
-			*/
+			     if (c.first == Feed::columns["id"])      id          = c.second;
+			else if (c.first == Feed::columns["uri"])     uri         = c.second;
+			else if (c.first == Feed::columns["title"])   title       = c.second;
+			else if (c.first == Feed::columns["updated"]) updated     = parseTime(c.second);
+			else if (c.first == Feed::columns["link"])    link        = c.second;
+			else if (c.first == Feed::columns["author"])  author      = c.second;
+			else if (c.first == Feed::columns["desc"])    description = c.second;
 		}
 	}
 	lang = language;

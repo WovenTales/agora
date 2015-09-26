@@ -66,18 +66,14 @@ Article::Article(const pugi::xml_node &entry, const Feed &feed, const FeedLang &
 void Article::parseArticleData(const Database::Data &data) {
 	for (pair<const Database::Table::Column, string> c : data) {
 		if (!c.second.empty()) {
-			//! \todo Switch on Column to set values
-			/*
-			switch (c.first) {
-				case Database::Table::Article::ID      : id      = c.second;            break;
-				case Database::Table::Article::Title   : title   = c.second;            break;
-				case Database::Table::Article::Updated : updated = parseTime(c.second); break;
-				case Database::Table::Article::Link    : link    = c.second;            break;
-				case Database::Table::Article::Author  : author  = c.second;            break;
-				case Database::Table::Article::Summary : summary = c.second;            break;
-				case Database::Table::Article::Content : content = c.second;            break;
-			}
-			*/
+			     if (c.first == Article::columns["id"])      id      = c.second;
+			else if (c.first == Article::columns["title"])   title   = c.second;
+			else if (c.first == Article::columns["updated"]) updated = parseTime(c.second);
+			else if (c.first == Article::columns["link"])    link    = c.second;
+			else if (c.first == Article::columns["author"])  author  = c.second;
+			else if (c.first == Article::columns["summary"]) summary = c.second;
+			else if (c.first == Article::columns["content"]) content = c.second;
+			//! \todo Implement Article::columns["feed"] affecting parent
 		}
 	}
 }
