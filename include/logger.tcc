@@ -26,7 +26,7 @@ Logger &operator<<(const T &in) {
 		}
 
 		// Need to use function as attempting to save resulting ostream throws error
-		stream() << str << " ";
+		stream() << str << (error ? " ! " : "   ");
 	}
 
 	// Print message

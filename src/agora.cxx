@@ -7,6 +7,7 @@
 #include <curl/curl.h>
 #include <locale.h>
 #include <sstream>
+#include <typeinfo>
 
 
 int main(int argc, char *argv[]) {
@@ -45,6 +46,7 @@ size_t curlWrite(char *ptr, size_t size, size_t nmemb, void *dest) {
  *  \return A string representation of the file
  */
 std::string agora::download(const std::string &url) {
+	Log << "Downloading file from '" << url << "'...";
 	std::string data;
 
 	CURL *curl = curl_easy_init();
@@ -63,6 +65,7 @@ std::string agora::download(const std::string &url) {
 
 	curl_easy_cleanup(curl);
 
+	Log << "Completed" << Log.ENDL;
 	return data;
 }
 

@@ -85,8 +85,9 @@ Feed::Feed(const Database::Data &data, agora::FeedLang language) : Feed() {
  *             to let the autodetection determine encoding.
  */
 Feed::Feed(const std::string &uri, agora::FeedLang language) : feed(new xml_document()), docRefs(*new unsigned char(1)), feedRefs(*new unsigned char(1)) {
-	Log << "compared value: " << uri.compare(0, 7, "file://") << Log.ENDL;
 	if (!uri.compare(0, 7, "file://", 0, string::npos)) {  // uri begins with "file://"
+		Log << "Loading file from '" << uri << "'" << Log.ENDL;
+
 		feed->load_file(uri.substr(7).c_str());
 	} else {
 		istringstream data(download(uri));
@@ -161,10 +162,12 @@ agora::FeedLang Feed::getLang() const {
 		return UNKNOWN_LANG;
 	}
 	if (feed->child("rss").child("channel").type()) {  // not a null node
+		Log << "Detected RSS syntax in feed" << Log.ENDL;
 		return RSS;
 	}
 	xml_node nodeFeed = feed->child("feed");
 	if (nodeFeed.type() && !strcmp(nodeFeed.attribute("xmlns").value(), "http://www.w3.org/2005/Atom")) {  // not null node && node.xmlns == ...
+		Log << "Detected ATOM syntax in feed" << Log.ENDL;
 		return ATOM;
 	}
 

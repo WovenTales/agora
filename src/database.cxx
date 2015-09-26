@@ -24,6 +24,17 @@ const Database::Table::List Database::tables = { &Database::meta, &Article::colu
 
 
 
+/*! \param list a Database::Table::List containing the table of the primary column
+ *
+ *  \return The Column this instance points to (potentially itself)
+ */
+const Database::Table::Column &Database::Table::Column::primaryColumn(const Database::Table::List &list) const {
+	Database::Table primary = parseTable(list, table);
+	return primary.parseColumn(column);
+}
+
+
+
 /*! Essentially, extracts Column.name from each object, and files it in the map
  *    under that same string.
  *
@@ -47,6 +58,7 @@ std::unordered_map<std::string, const Database::Table::Column> Database::Table::
  *  \return a Table::Column representing the column with the given SQLite name
  */
 const Database::Table::Column &Database::Table::parseColumn(const std::string &col) const {
+	Log << "Searching for column '" << col << "' in table '" << table << "'...";
 	const Column *out = NULL, *c;
 
 	auto end = columns.cend();
@@ -63,6 +75,9 @@ const Database::Table::Column &Database::Table::parseColumn(const std::string &c
 
 	if (out == NULL) {
 		//! \todo Throw error: no such column found
+		Log << "No such column found" << Log.ENDL;
+	} else {
+		Log << "Found" << Log.ENDL;
 	}
 
 	return *out;
@@ -76,16 +91,21 @@ const Database::Table::Column &Database::Table::parseColumn(const std::string &c
  *  \return a Table::Column representing the primary column with the given SQLite name
  */
 const Database::Table::Column &Database::Table::parseColumn(const Database::Table::List &list, const std::string &col) {
+	Log << "Searching for column '" << col << "' in list of tables..." << Log.ENDL;
 	const Column *out = NULL, *c;
 
 	for (const Table *t : list) {
+		Log << Log.CONTINUE;
 		//! \todo Ensure that catching No such column exception once implemented, and set c = NULL in that case
 		c = &(t->parseColumn(col));
 
 		if (c != NULL) {
 			if (out == NULL) {
-				//! Retrieve primary column
-				out = &(parseTable(list, c->table)[col]);
+				if (!t->table.compare(c->table)) {  // t.table == c.table
+					out = c;
+				} else {
+					out = &(c->primaryColumn(list));
+				}
 			} else if (out->table.compare(c->table)) {  // out.table != c.table
 				//! \todo Throw error: multiple primary columns with same SQLite name
 			}
@@ -94,6 +114,9 @@ const Database::Table::Column &Database::Table::parseColumn(const Database::Tabl
 
 	if (out == NULL) {
 		//! \todo Throw error: no such column found
+		Log << Log.CONTINUE << "No such column found" << Log.ENDL;
+	} else {
+		Log << Log.CONTINUE << "Found primary column in table '" << out->table << "'" << Log.ENDL;
 	}
 
 	return *out;
@@ -105,6 +128,7 @@ const Database::Table::Column &Database::Table::parseColumn(const Database::Tabl
  *  \return a Table representing that with the given SQLite name
  */
 const Database::Table &Database::Table::parseTable(const Database::Table::List &list, const std::string &table) {
+	Log << "Searching for table '" << table << "'...";
 	const Table *out = NULL;
 
 	for (const Table *t : list) {
@@ -118,6 +142,9 @@ const Database::Table &Database::Table::parseTable(const Database::Table::List &
 
 	if (out == NULL) {
 		//! \todo Throw error: no such table found
+		Log << "No such error found" << Log.ENDL;
+	} else {
+		Log << "Found" << Log.ENDL;
 	}
 
 	return *out;
@@ -176,15 +203,15 @@ Database &Database::operator=(const Database &d) {
  *  \return An Article with values according to given ID
  */
 Article Database::getArticle(const std::string &id) const {
-	Log << "Requesting article with id '" << id << "'..." << (Log.ENDL | Log.CONTINUE) << "    ";
+	Log << "Requesting article with id '" << id << "'..." << (Log.ENDL | Log.CONTINUE);
 
 	DataList rows = getColumns({}, {{ Article::columns["id"], id }});
 
 	if (!rows.size()) {  // rows.size() == 0
-		Log << "    No such article found" << Log.ENDL;
+		Log << Log.CONTINUE << "No such article found" << Log.ENDL;
 		return Article();
 	} else {
-		Log << "    Found" << Log.ENDL;
+		Log << Log.CONTINUE << "Found article matching id" << Log.ENDL;
 		return Article(rows[0]);
 	}
 }
@@ -196,15 +223,15 @@ Article Database::getArticle(const std::string &id) const {
  *  \return An Feed with values according to given ID
  */
 Feed Database::getFeed(const std::string &id) const {
-	Log << "Requesting feed with id '" << id << "'..." << (Log.ENDL | Log.CONTINUE) << "    ";
+	Log << "Requesting feed with id '" << id << "'..." << (Log.ENDL | Log.CONTINUE);
 
 	DataList rows = getColumns({}, {{ Feed::columns["id"], id }});
 
 	if (!rows.size()) {  // rows.size() == 0
-		Log << "    No such article found" << Log.ENDL;
+		Log << Log.CONTINUE << "No such feed found" << Log.ENDL;
 		return Feed();
 	} else {
-		Log << "    Found" << Log.ENDL;
+		Log << Log.CONTINUE << "Found feed matching id" << Log.ENDL;
 		return Feed(rows[0]);
 	}
 }
@@ -324,6 +351,7 @@ void Database::open(const std::string &filename) {
  */
 Database::DataList Database::getColumns(const std::initializer_list<Database::Table::Column> &cols,
                                         const std::initializer_list< std::pair<const Database::Table::Column, std::string> > &where) const {
+	Log << "Constructing SELECT request...";
 	DataList out;
 
 	// If no restrictions are passed
@@ -333,9 +361,9 @@ Database::DataList Database::getColumns(const std::initializer_list<Database::Ta
 
 	vector<string> tables;
 
-	string cmdColumn;
-	string cmdTables;
-	string cmdWhere;
+	string cmdColumn("");
+	string cmdTables("");
+	string cmdWhere("");
 
 	// For each column requested
 	bool firstCol = true;
@@ -400,8 +428,10 @@ Database::DataList Database::getColumns(const std::initializer_list<Database::Ta
 	string cmd = "SELECT " + (cols.size() ? cmdColumn : "*") + " FROM " + cmdTables + cmdWhere + ";";
 
 	// Execute the compiled command
-	Log << "Looking for columns following command '" << cmd << "'" << Log.ENDL;
+	Log << "Completed" << (Log.ENDL | Log.CONTINUE) << "Executing command..." << (Log.ENDL | Log.CONTINUE);
+	//! \todo Implement ability to pause log to prevent spam
 	sqlite3_exec(db, cmd.c_str(), (int (*)(void*, int, char**, char**))getEntries, &out, NULL);
+	// Log << "Completed" << Log.ENDL;
 	return out;
 }
 
@@ -421,9 +451,10 @@ void Database::clearStaged() {
 void Database::stage(const Article &a) {
 	// Create a new instance so user doesn't have to worry about scope
 	Article *p = new Article(a);
-	Log << "Staging article '" << p->getTitle() << "'" << Log.ENDL;
+	Log << "Staging article '" << p->getTitle() << "'...";
 
 	articleStage.push(p);
+	Log << "Completed" << Log.ENDL;
 }
 
 /*! \param f the feed to stage
@@ -431,7 +462,7 @@ void Database::stage(const Article &a) {
 void Database::stage(const Feed &f) {
 	// Create a new instance so user doesn't have to worry about scope
 	Feed *p = new Feed(f);
-	Log << "Staging feed '" << p->getTitle() << "'" << Log.ENDL;
+	Log << "Staging feed '" << p->getTitle() << "'..." << (Log.ENDL | Log.CONTINUE);
 
 	feedStage.push(p);
 
@@ -445,7 +476,11 @@ void Database::stage(const Feed &f) {
 	for (xml_node entry = root.child(tag);
 	     entry.type(); // != NULL
 	     entry = entry.next_sibling(tag)) {
-		stage(Article(entry, *p, lang));
+		Article a(entry, *p, lang);
+		Log << Log.CONTINUE;
+
+		stage(a);
+		Log << Log.CONTINUE;
 		++count;
 	}
 
@@ -455,7 +490,7 @@ void Database::stage(const Feed &f) {
 
 //! \todo Update to use new Table::Column structure
 void Database::save() {
-	Log << "Committing staged elements" << Log.ENDL;
+	Log << "Committing staged elements..." << (Log.ENDL | Log.CONTINUE);
 
 	unsigned int countF = 0, countA = 0;
 	string insert("");
@@ -508,7 +543,7 @@ void Database::save() {
 		delete a;
 		countA++;
 
-		Log << "Completed" << Log.ENDL;
+		Log << "Completed" << (Log.ENDL | Log.CONTINUE);
 	}
 
 	const Feed *f;
@@ -552,7 +587,7 @@ void Database::save() {
 		}
 		countF++;
 
-		Log << "Completed" << Log.ENDL;
+		Log << "Completed" << (Log.ENDL | Log.CONTINUE);
 	}
 
 	exec(insert);
@@ -576,9 +611,11 @@ int Database::getEntries(Database::DataList *out, int cols, char *data[], char *
 	Data m;
 	for (int i = 0; i < cols; i++) {
 		m[Table::parseColumn(tables, colNames[i])] = (data[i] ? agora::replaceAll(data[i], "''", "'") : "");
+		Log << Log.CONTINUE;
 	}
 
 	out->push_back(m);
+	Log << Log.ENDL;
 	return 0;  // Successful call
 };
 

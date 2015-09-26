@@ -26,6 +26,9 @@ class Database {
 	//! Lookup table for info on tables in database
 	struct Table {
 	  public:
+		//! List of Table pointers
+		typedef std::vector<const Table*> List;
+
 		//! Encapsulation of information on table columns to allow dynamic generation
 		struct Column {
 		  private:
@@ -33,6 +36,15 @@ class Database {
 			Column();
 
 		  public:
+			//! Standard constructor
+			/*! \param n \copybrief name
+			 *  \param t \copybrief table
+			 *  \param c \copybrief column
+			 *  \param u \copybrief update
+			 */
+			Column(const std::string &n, const std::string &t, const std::string &c, bool u) :
+			                 name(n),              table(t),             column(c),      update(u) {};
+
 			const std::string name;    //!< Reference name of column (unique within table)
 			/*! If different from the enclosing Table::table, indicates a link
 			 *    to the \ref column of the same name in the specified table.
@@ -51,18 +63,12 @@ class Database {
 			/*! \todo Make function pointer */
 			const bool        update;  //!< Whether to preform simple automatic update on column
 
-			//! Standard constructor
-			/*! \param n \copybrief name
-			 *  \param t \copybrief table
-			 *  \param c \copybrief column
-			 *  \param u \copybrief update
-			 */
-			Column(const std::string &n, const std::string &t, const std::string &c, bool u) :
-			                 name(n),              table(t),             column(c),      update(u) {};
-		};
+			//! Equality operator
+			bool operator==(const Column &r) const { return (!table.compare(r.table) && !column.compare(r.column)); };  // table == r.table && column == r.column
 
-		//! List of Table pointers
-		typedef std::vector<const Table*> List;
+			//! Get the primary instance of this column
+			const Column &primaryColumn(const Database::Table::List&) const;
+		};
 
 	  private:
 		//! Default constructor
