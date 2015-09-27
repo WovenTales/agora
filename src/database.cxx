@@ -236,40 +236,16 @@ Feed Database::getFeed(const std::string &id) const {
 	}
 }
 
-/*! \return Whether the feed document differed from the saved copy\n
- *          Note that time of last update will always be changed to current time
+/*! \todo Be smarter in determining what needs to be updated in feed.\n
+ *        Might not provide any benefit as we have already downloaded and constructed it.
+ *
+ *  \param id the id of the feed to update
  */
 void Database::updateFeed(const std::string &id) {
 	Feed local = getFeed(id);
-	Feed remote(local.getURI(), local.getLang());
-	//! \todo Adapt to new location and complete
-	/*
-	Feed remote(uri, lang);
 
-	// id, uri should stay constant
-	if (author.compare(remote.author)) {
-		//! \todo Change all feeds using (previous) default author
-		author = remote.author;
-		changed = true;
-	}
-	if (link.compare(remote.description)) {
-		description = remote.description;
-		changed = true;
-	}
-	if (link.compare(remote.link)) {
-		link = remote.link;
-		changed = true;
-	}
-	if (title.compare(remote.title)) {
-		//! \todo Implement and check for user-specified title
-		title = remote.title;
-		changed = true;
-	}
-
-	updated = time(NULL);
-
-	// Update associated articles
-	*/
+	// Dumb copy over works as long as no modified data is stored in main table
+	stage(Feed(local.getURI(), local.getLang()));
 }
 
 
@@ -446,7 +422,9 @@ void Database::clearStaged() {
 	Log << "Completed" << Log.ENDL;
 }
 
-/*! \param a the article to stage
+/*! Creates a copy of the article to avoid worry about scope.
+ *
+ *  \param a the article to stage
  */
 void Database::stage(const Article &a) {
 	// Create a new instance so user doesn't have to worry about scope
@@ -457,10 +435,11 @@ void Database::stage(const Article &a) {
 	Log << "Completed" << Log.ENDL;
 }
 
-/*! \param f the feed to stage
+/*! Creates a copy of the feed to avoid worry about scope.
+ *
+ *  \param f the feed to stage
  */
 void Database::stage(const Feed &f) {
-	// Create a new instance so user doesn't have to worry about scope
 	Feed *p = new Feed(f);
 	Log << "Staging feed '" << p->getTitle() << "'..." << (Log.ENDL | Log.CONTINUE);
 
