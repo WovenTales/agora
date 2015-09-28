@@ -15,41 +15,41 @@ using namespace std;
 
 /*! Note that Meta columns are not updated, and so that column has no effect.
  */
-const Database::Table Database::meta("meta", {
-	{ "title",   "meta", "title",   false },
-	{ "version", "meta", "version", false }
+const Database::Table Database::meta("meta", false, {}, {
+	{ "title",   "title",   false },
+	{ "version", "version", false }
 	});
 
 const Database::Table::List Database::tables = { &Database::meta, &Article::columns, &Feed::columns };
 
 
 
-/*! \param list a Database::Table::List containing the table of the primary column
- *
- *  \return The Column this instance points to (potentially itself)
- */
-const Database::Table::Column &Database::Table::Column::primaryColumn(const Database::Table::List &list) const {
-	Database::Table primary = parseTable(list, table);
-	return primary.parseColumn(column);
-}
-
-
-
 /*! Essentially, extracts Column.name from each object, and files it in the map
  *    under that same string.
+ *
+ *  \todo Ensure uniqueness of proper columns
  *
  *  \param data List of Column objects with which to populate the map
  *
  *  \return a map prepared for direct assignment to \ref columns
  */
-std::unordered_map<std::string, const Database::Table::Column> Database::Table::generateMap(const std::vector<Database::Table::Column> &data) {
+std::unordered_map<std::string, const Database::Table::Column> Database::Table::generateMap(const Database::Table *table, const std::vector<Database::Table::Column> &data) {
 	unordered_map<string, const Column> out;
 
 	for (Column c : data) {
-		out.emplace(c.name, c);
+		out.emplace(c.name, Column(c, table));
 	}
 
 	return out;
+}
+
+const Database::Table::Column *Database::Table::makeID(const Table *table, const std::string &title, bool unique) {
+	if (!unique) {
+		return NULL;
+	} else {
+		//! \todo Remarkably inefficiant
+		return new Column(Column("id", ("_" + title + "_ID"), false), table);
+	}
 }
 
 
@@ -58,11 +58,26 @@ std::unordered_map<std::string, const Database::Table::Column> Database::Table::
  *  \return a Table::Column representing the column with the given SQLite name
  */
 const Database::Table::Column &Database::Table::parseColumn(const std::string &col) const {
-	Log << "Searching for column '" << col << "' in table '" << table << "'...";
-	const Column *out = NULL, *c;
+	Log << "Searching for column '" << col << "' in table '" << title << "'...";
 
-	auto end = columns.cend();
-	for (auto it = columns.cbegin(); it != end; ++it) {
+	if (hasID()) {
+		const Column &id = getID();
+		if (!id.column.compare(col)) {  // col == table ID
+			return id;
+		}
+	}
+
+	auto lend = links.cend();
+	for (auto it = links.cbegin(); it != lend; ++it) {
+		const Column &lid = (*it)->getID();
+		if (!lid.column.compare(col)) {  // col == linked table ID
+			return lid;
+		}
+	}
+
+	const Column *out = NULL, *c;
+	auto cend = end();
+	for (auto it = iterator(); it != cend; ++it) {
 		c = &(it->second);
 
 		if (!c->column.compare(col)) {  // c.column == col
@@ -101,13 +116,9 @@ const Database::Table::Column &Database::Table::parseColumn(const Database::Tabl
 
 		if (c != NULL) {
 			if (out == NULL) {
-				if (!t->table.compare(c->table)) {  // t.table == c.table
-					out = c;
-				} else {
-					out = &(c->primaryColumn(list));
-				}
-			} else if (out->table.compare(c->table)) {  // out.table != c.table
-				//! \todo Throw error: multiple primary columns with same SQLite name
+				out = c;
+			} else {  // out.title != c.title
+				//! \todo Throw error: multiple columns with same SQLite name
 			}
 		}
 	}
@@ -116,7 +127,7 @@ const Database::Table::Column &Database::Table::parseColumn(const Database::Tabl
 		//! \todo Throw error: no such column found
 		Log << Log.CONTINUE << "No such column found" << Log.ENDL;
 	} else {
-		Log << Log.CONTINUE << "Found primary column in table '" << out->table << "'" << Log.ENDL;
+		Log << Log.CONTINUE << "Found primary column in table '" << out->table->title << "'" << Log.ENDL;
 	}
 
 	return *out;
@@ -132,7 +143,7 @@ const Database::Table &Database::Table::parseTable(const Database::Table::List &
 	const Table *out = NULL;
 
 	for (const Table *t : list) {
-		if (!t->table.compare(table)) {  // name(t) == table
+		if (!t->title.compare(table)) {  // name(t) == table
 			if (out != NULL) {
 				//! \todo Throw error: multiple identically-named tables
 			}
@@ -205,7 +216,7 @@ Database &Database::operator=(const Database &d) {
 Article Database::getArticle(const std::string &id) const {
 	Log << "Requesting article with id '" << id << "'..." << (Log.ENDL | Log.CONTINUE);
 
-	DataList rows = getColumns({}, {{ Article::columns["id"], id }});
+	DataList rows = getColumns({}, {{ Article::columns.getID(), id }});
 
 	if (!rows.size()) {  // rows.size() == 0
 		Log << Log.CONTINUE << "No such article found" << Log.ENDL;
@@ -225,7 +236,7 @@ Article Database::getArticle(const std::string &id) const {
 Feed Database::getFeed(const std::string &id) const {
 	Log << "Requesting feed with id '" << id << "'..." << (Log.ENDL | Log.CONTINUE);
 
-	DataList rows = getColumns({}, {{ Feed::columns["id"], id }});
+	DataList rows = getColumns({}, {{ Feed::columns.getID(), id }});
 
 	if (!rows.size()) {  // rows.size() == 0
 		Log << Log.CONTINUE << "No such feed found" << Log.ENDL;
@@ -288,32 +299,42 @@ void Database::open(const std::string &filename) {
 	Log << "Completed" << Log.ENDL;
 
 	bool init = true;
-	// If this is a new database, table is nonexistent and so contains no columns
+	// If this is a new database, table is nonexistent and so table_info contains no columns
 	sqlite3_exec(db, "PRAGMA table_info(meta)", (int (*)(void*, int, char**, char**))isEmpty, &init, NULL);
 
 	if (init) {
-		//! \todo Generate programatically
-		string meta =     "CREATE TABLE meta     (title,"
-		                                         "version);"
-		                          "INSERT INTO meta (title, version) VALUES ('" + replaceAll(filename, "'", "''") + "', 2);";
-		string feeds =    "CREATE TABLE feeds    (fID        NOT NULL PRIMARY KEY ON CONFLICT REPLACE,"
-		                                         "fTitle,"
-		                                         "fUpdated,"
-		                                         "fLink,"
-		                                         "fAuthor,"
-		                                         "fDesc);";
-		string articles = "CREATE TABLE articles (aID       NOT NULL PRIMARY KEY ON CONFLICT REPLACE,"
-		                                         "fID,"
-		                                         "aTitle,"
-		                                         "aUpdated,"
-		                                         "aLink,"
-		                                         "aAuthor,"
-		                                         "aSummary,"
-		                                         "aContent);";
+		string command("");
 
-		exec(meta.append(feeds).append(articles).c_str());
+		for (const Table *t : tables) {
+			command.append("CREATE TABLE " + t->title + " (");
+
+			if (t->hasID()) {
+				command.append(t->getID().column + " NOT NULL PRIMARY KEY ON CONFLICT REPLACE,");
+			}
+
+			bool firstCol = true;
+			auto lend = t->links.cend();
+			for (auto it = t->links.cbegin(); it != lend; ++it) {
+				command.append((firstCol ? "" : ",") + (*it)->getID().column);
+				firstCol = false;
+			}
+
+			auto end = t->end();
+			for (auto it = t->iterator(); it != end; ++it) {
+				command.append((firstCol ? "" : ",") + it->second.column);
+				firstCol = false;
+			}
+
+			command.append(");");
+		}
+
+		//! \todo Another good candidate for parametric data storage
+		command.append("INSERT INTO meta (title, version) VALUES ('" + replaceAll(filename, "'", "''") + "',3);");
+
+		exec(command.c_str());
 		Log << "New database initialized" << Log.ENDL;
 	}
+	//! \todo Allow updating old database format
 }
 
 
@@ -345,7 +366,7 @@ Database::DataList Database::getColumns(const std::initializer_list<Database::Ta
 	bool firstCol = true;
 	string t;
 	for (Table::Column c : cols) {
-		t = c.table;
+		t = c.table->title;
 
 		// If c's containing table is not already in tables
 		if (find(tables.begin(), tables.end(), t) == tables.end()) {
@@ -364,7 +385,7 @@ Database::DataList Database::getColumns(const std::initializer_list<Database::Ta
 	// For each search restriction
 	firstCol = true;
 	for (pair<const Table::Column, string> w : where) {
-		t = w.first.table;
+		t = w.first.table->title;
 
 		// Whether any particular columns were requested
 		bool colsEmpty = (cols.size() == 0);
@@ -492,7 +513,7 @@ void Database::save() {
 
 		Log << "Generating command for article '" << title << "'...";
 
-		cols = "aID, fID";
+		cols = Article::columns.getID().column + ", " + Feed::columns.getID().column;
 		vals = "'" + id + "','" + feedID + "'";
 
 		if (title.compare("")) {  // title != ""
@@ -531,6 +552,7 @@ void Database::save() {
 		feedStage.pop();
 
 		string id          = replaceAll(f->getID(), "'", "''");
+		string uri         = replaceAll(f->getURI(), "'", "''");
 		string title       = replaceAll(f->getTitle(), "'", "''");
 		string link        = replaceAll(f->getLink(), "'", "''");
 		string author      = replaceAll(f->getAuthor(), "'", "''");
@@ -538,9 +560,13 @@ void Database::save() {
 
 		Log << "Generating command for feed '" << title << "'...";
 
-		cols = "fID";
+		cols = Feed::columns.getID().column;
 		vals = "'" + id + "'";
 
+		if (uri.compare("")) {  // uri != ""
+			cols += ", fURI";
+			vals += ",'" + uri + "'";
+		}
 		if (title.compare("")) {  // title != ""
 			cols += ", fTitle";
 			vals += ",'" + title + "'";
@@ -578,6 +604,8 @@ void Database::save() {
 /*! \param cmd SQLite3 command to execute
  */
 void Database::exec(const std::string &cmd) {
+	//! \todo Implement DEBUG level in log
+	//Log << "Executing command '" << cmd << "'" << Log.ENDL;
 	sqlite3_exec(db, cmd.c_str(), NULL, NULL, NULL);
 }
 

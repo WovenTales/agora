@@ -6,16 +6,12 @@ class Article;
 class Feed;
 #include <logger.hxx>
 
-//! \todo Are any of these unnecessary?
-#include <algorithm>
 #include <initializer_list>
-#include <map>
 #include <queue>
 #include <sqlite3.h>
 #include <string>
-#include <typeinfo>
 #include <unordered_map>
-#include <utility>
+#include <unordered_set>
 #include <vector>
 
 
@@ -32,74 +28,90 @@ class Database {
 		//! Encapsulation of information on table columns to allow dynamic generation
 		struct Column {
 		  private:
+			friend Database::Table;
+
 			//! Default constructor
 			Column();
+
+			//! Constructor to add reference to Table
+			Column(const Column &c, const Database::Table *t) :
+				name(c.name), column(c.column), update(c.update), table(t) {};
 
 		  public:
 			//! Standard constructor
 			/*! \param n \copybrief name
-			 *  \param t \copybrief table
 			 *  \param c \copybrief column
 			 *  \param u \copybrief update
-			 */
-			Column(const std::string &n, const std::string &t, const std::string &c, bool u) :
-			                 name(n),              table(t),             column(c),      update(u) {};
-
-			const std::string name;    //!< Reference name of column (unique within table)
-			/*! If different from the enclosing Table::table, indicates a link
-			 *    to the \ref column of the same name in the specified table.
 			 *
-			 *  \todo May want to create secondary reference to actual table
-			 *          (table:column identifies in database, name:t2 identifies object)
+			 *  \warning The resulting Column is the proper format to insert into a
+			 *             Database::Table, but modifications as it is added result in an
+			 *             object that is not identical to this original.
 			 */
-			const std::string table;   //!< %Table in which primary column is located
+			Column(const std::string &n, const std::string &c, bool u) :
+			             name(n),              column(c),      update(u), table(NULL) {};
 
-			/*! If included in multiple tables, only one should have \ref table match
-			 *    Table::table; that column refered to as "primary" and all other columns
-			 *    with the same name should have \ref table identical to the contaning
-			 *    Table::table of the *primary* column.
-			 */
-			const std::string column;  //!< Name in SQLite database (unique within table)
+			const std::string             name;    //!< Reference name of column (unique within table)
+			const Database::Table * const table;   //! The containing Database::Table
+
+			const std::string             column;  //!< Name in SQLite database (unique within table)
 			/*! \todo Make function pointer */
-			const bool        update;  //!< Whether to preform simple automatic update on column
+			const bool                    update;  //!< Whether to preform simple automatic update on column
 
 			//! Equality operator
-			bool operator==(const Column &r) const { return (!table.compare(r.table) && !column.compare(r.column)); };  // table == r.table && column == r.column
-
-			//! Get the primary instance of this column
-			const Column &primaryColumn(const Database::Table::List&) const;
+			bool operator==(const Column &r) const { return ((table == r.table) && !column.compare(r.column)); };  // table == r.table && column == r.column
 		};
 
 	  private:
 		//! Default constructor
 		Table();
 
-		//! Name of table in database
-		const std::string table;
+		//! Column for unique row identification
+		const Column * const id;
 		//! Main data storage
 		const std::unordered_map<std::string, const Column> columns;
 
 		//! Provide means of more easily filling \ref columns
-		static std::unordered_map<std::string, const Column> generateMap(const std::vector<Column>&);
+		static std::unordered_map<std::string, const Column> generateMap(const Table*, const std::vector<Column>&);
+		//! Provide means of initializing \ref id
+		static const Column *makeID(const Table*, const std::string&, bool);
 
 		//! Provide a means to hash columns
 		struct column_hash_eq {
 			//! Hash function
-			std::size_t operator() (const Column a) const { return std::hash<std::string>()(a.table + ":" + a.column); };
+			std::size_t operator() (const Column a) const { return std::hash<std::string>()((a.table ? a.table->title : "") + ":" + a.column); };
 			//! Equality function
-			bool operator() (const Column a, const Column b) const { return ((a.table == b.table) && (a.column == b.column)); };
+			bool operator() (const Column a, const Column b) const { return (((a.table ? a.table->title : "") == (b.table ? b.table->title : "")) && (a.column == b.column)); };
 		};
 
 	  public:
 		//! Standard constructor
-		/*! \param t    name of the table in the database
+		/*! \todo Prevent linking any tables without ID
+		 *
+		 *  \param t    name of the table in the database
 		 *  \param data list of Column objects contained in the table
 		 */
-		Table(const std::string &t, const std::vector<Column> &data) :
-			table(t), columns(generateMap(data)) {};
+		Table(const std::string &t, bool u,                 const std::unordered_set<const Table*> &l, const std::vector<Column> &data) :
+		            title(t),       id(makeID(this, t, u)),       links(l),                                  columns(generateMap(this, data)) {};
+
+		//! Standard destructor
+		virtual ~Table() { delete id; };
+
+		//! Name of table in database
+		const std::string title;
+		//! Secondary data to link to in other Table objects
+		const std::unordered_set<const Table*> links;
+
+		//! Whether the table has a unique ID for each row
+		const bool hasID() const { return (id != NULL); };
+		//! Get unique ID of the table
+		const Column &getID() const { return *id; };
 
 		//! Element access operator
 		const Column &operator [](const std::string &ref) const { return columns.at(ref); };
+		//! Iterator to first column in internal order
+		std::unordered_map<std::string, const Column>::const_iterator iterator() const { return columns.cbegin(); };
+		//! Iterator to last column in internal order
+		std::unordered_map<std::string, const Column>::const_iterator end() const { return columns.cend(); };
 
 		//! Obtain a Table::Column from a SQLite column name
 		const Column &parseColumn(const std::string&) const;

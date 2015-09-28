@@ -10,15 +10,13 @@ using namespace pugi;
 using namespace std;
 
 
-const Database::Table Article::columns("articles", {
-	{ "id",      "articles", "aID",      false },
-	{ "feed",    "feeds",    "fID",      false },
-	{ "title",   "articles", "aTitle",   true  },
-	{ "updated", "articles", "aUpdated", false },
-	{ "link",    "articles", "aLink",    true  },
-	{ "author",  "articles", "aAuthor",  true  },
-	{ "summary", "articles", "aSummary", true  },
-	{ "content", "articles", "aContent", true  }
+const Database::Table Article::columns("articles", true, { &Feed::columns }, {
+	{ "title",   "aTitle",   true  },
+	{ "updated", "aUpdated", false },
+	{ "link",    "aLink",    true  },
+	{ "author",  "aAuthor",  true  },
+	{ "summary", "aSummary", true  },
+	{ "content", "aContent", true  }
 	});
 
 
@@ -63,24 +61,27 @@ Article::Article(const pugi::xml_node &entry, const Feed &feed, const FeedLang &
 	}
 }
 
+/*! \todo Generate dynamically
+ *
+ *  \param data     data with which to initialize
+ */
 void Article::parseArticleData(const Database::Data &data) {
 	for (pair<const Database::Table::Column, string> c : data) {
 		if (!c.second.empty()) {
-			     if (c.first == Article::columns["id"])      id      = c.second;
+			     if (c.first == Article::columns.getID())    id      = c.second;
 			else if (c.first == Article::columns["title"])   title   = c.second;
 			else if (c.first == Article::columns["updated"]) updated = parseTime(c.second);
 			else if (c.first == Article::columns["link"])    link    = c.second;
 			else if (c.first == Article::columns["author"])  author  = c.second;
 			else if (c.first == Article::columns["summary"]) summary = c.second;
 			else if (c.first == Article::columns["content"]) content = c.second;
-			//! \todo Implement Article::columns["feed"] affecting parent
 		}
 	}
 }
 /*! \param data data with which to initialize
  *  \param fID  ID of the parent feed
  */
-Article::Article(const Database::Data &data, const std::string &fID) : Article(*new Feed({{ Feed::columns["id"], fID }})) {
+Article::Article(const Database::Data &data, const std::string &fID) : Article(*new Feed({{ Feed::columns.getID(), fID }})) {
 	parseArticleData(data);
 }
 /*! \param data data with which to initialize

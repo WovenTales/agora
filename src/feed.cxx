@@ -14,14 +14,13 @@ using namespace pugi;
 using namespace std;
 
 
-const Database::Table Feed::columns("feeds", {
-	{ "id",      "feeds", "fID",      false },
-	{ "uri",     "feeds", "fURI",     false },
-	{ "title",   "feeds", "fTitle",   true  },  //!< \todo Implement and check for user-specified title
-	{ "updated", "feeds", "fUpdated", false },
-	{ "link",    "feeds", "fLink",    true  },
-	{ "author",  "feeds", "fAuthor",  true  },  //!< \todo Change all feeds using (previous) default author on update
-	{ "desc",    "feeds", "fDesc",    true  }
+const Database::Table Feed::columns("feeds", true, {}, {
+	{ "uri",     "fURI",     false },
+	{ "title",   "fTitle",   true  },  //!< \todo Implement and check for user-specified title
+	{ "updated", "fUpdated", false },
+	{ "link",    "fLink",    true  },
+	{ "author",  "fAuthor",  true  },  //!< \todo Change all feeds using (previous) default author on update
+	{ "desc",    "fDesc",    true  }
 	});
 
 
@@ -51,13 +50,15 @@ Feed::Feed(const Feed &f) : feed(f.feed), docRefs(f.docRefs), feedRefs(*new unsi
 	lang = f.lang;
 }
 
-/*! \param data     data with which to initialize
+/*! \todo Generate dynamically
+ *
+ *  \param data     data with which to initialize
  *  \param language encoding of feed
  */
 Feed::Feed(const Database::Data &data, agora::FeedLang language) : Feed() {
 	for (pair<const Database::Table::Column, string> c : data) {
 		if (!c.second.empty()) {
-			     if (c.first == Feed::columns["id"])      id          = c.second;
+			     if (c.first == Feed::columns.getID())    id          = c.second;
 			else if (c.first == Feed::columns["uri"])     uri         = c.second;
 			else if (c.first == Feed::columns["title"])   title       = c.second;
 			else if (c.first == Feed::columns["updated"]) updated     = parseTime(c.second);

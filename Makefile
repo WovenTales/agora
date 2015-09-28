@@ -39,10 +39,11 @@ docs: $(DOCDIR)/html
 $(DOCDIR)/html: $(DOCDIR)/Doxyfile $(SOURCES) $(HEADERS)
 	doxygen $<
 
-.PHONY: clean clean-docs
-clean:
-	-rm -fr $(OBJDIR)/* $(LOGFILE) $(BINDIR)/agora
+.PHONY: clean clean-cache clean-docs
+clean: clean-cache clean-docs
 	-rmdir $(BINDIR) $(OBJDIR)
+clean-cache:
+	-rm -fr $(OBJDIR)/* $(LOGFILE) $(BINDIR)/agora
 clean-docs:
 	find docs/* ! -iname 'Doxyfile' -print0 | xargs -0 rm -rf
 
