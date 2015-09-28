@@ -11,9 +11,23 @@ using namespace pugi;
 using namespace std;
 
 
+const Database::Table Article::columns("articles", true, { &Feed::columns }, {
+	{ "title",   "aTitle",   true  },
+	{ "updated", "aUpdated", false },
+	{ "link",    "aLink",    true  },
+	{ "author",  "aAuthor",  true  },
+	{ "summary", "aSummary", true  },
+	{ "content", "aContent", true  }
+	});
+
+
+// Define here so don't need #include <feed.hxx> in the header
+Article::Article() : Article(*new Feed) {
+}
+
 /*! Sets all parameters to empty string or equivalent.
  */
-Article::Article() : parent(*new Feed) {
+Article::Article(const Feed &p) : parent(p) {
 	id = "";
 	title = "";
 	updated = parseTime("");
@@ -52,28 +66,34 @@ Article::Article(const pugi::xml_node &entry, const Feed &feed, const FeedLang &
 	}
 }
 
-/*! \todo Try to find something like Python's parameter dictionary so order's not as difficult to maintain\n
- *        https://isocpp.org/wiki/faq/ctors#named-parameter-idiom seems workable\n
- *        The main reason the properties are private is to disallow manipulation; set iff empty?
+/*! \todo Generate dynamically
  *
- *  \param id      article ID
- *  \param feedID  ID of parent feed
- *  \param title   title
- *  \param link    link to original article
- *  \param updated time of last update
- *  \param author  author
- *  \param content content
- *  \param summary summary
+ *  \param data data with which to initialize
  */
-Article::Article(const std::string &id, const std::string &feedID, const std::string &title, const std::string &link, const time_t &updated,
-		const std::string &author, const std::string &content, const std::string &summary) : parent(*new Feed(feedID, "")) {
-	this->id = id;
-	this->title = title;
-	this->link = link;
-	this->updated = updated;
-	this->author = author;
-	this->content = content;
-	this->summary = summary;
+void Article::parseArticleData(const Database::Data &data) {
+	for (pair<const Database::Table::Column, string> c : data) {
+		if (!c.second.empty()) {
+			     if (c.first == Article::columns.getID())    id      = c.second;
+			else if (c.first == Article::columns["title"])   title   = c.second;
+			else if (c.first == Article::columns["updated"]) updated = parseTime(c.second);
+			else if (c.first == Article::columns["link"])    link    = c.second;
+			else if (c.first == Article::columns["author"])  author  = c.second;
+			else if (c.first == Article::columns["summary"]) summary = c.second;
+			else if (c.first == Article::columns["content"]) content = c.second;
+		}
+	}
+}
+/*! \param data data with which to initialize
+ *  \param fID  ID of the parent feed
+ */
+Article::Article(const Database::Data &data, const std::string &fID) : Article(*new Feed({{ Feed::columns.getID(), fID }})) {
+	parseArticleData(data);
+}
+/*! \param data data with which to initialize
+ *  \param p    feed to link as parent
+ */
+Article::Article(const Database::Data &data, const Feed &p) : Article(p) {
+	parseArticleData(data);
 }
 
 Article::~Article() {
@@ -84,7 +104,7 @@ Article::~Article() {
 }
 
 
-//Define here so don't need #include <feed.hxx> in the header
+// Define here so don't need #include <feed.hxx> in the header
 string Article::getFID() const {
 	return parent.getID();
 }

@@ -110,11 +110,11 @@ void NcursesArticlePanel::fill() {
  */
 void NcursesArticlePanel::loadArticle(const Database &db, const std::string &aID) {
 	// We only need to display some of the data
-	Database::ArticleDataList t = db.getColumns<Database::Table::Article>({ Database::Table::Article::Title }, {{ Database::Table::Article::ID, aID }});
+	Database::DataList t = db.getColumns({ Article::columns["title"] }, {{ Article::columns.getID(), aID }});
 
 	//! \todo Is this really the test we want?
 	if (t.size()) {  // t.size != 0
-		tabs.push_back(t[0][Database::Table::Article::Title]);
+		tabs.push_back(t[0][Article::columns["title"]]);
 		//! \todo Data retrieval methods are inconsistent
 		content = splitString(db.getArticle(aID).getContent());
 

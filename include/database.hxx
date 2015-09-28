@@ -6,124 +6,140 @@ class Article;
 class Feed;
 #include <logger.hxx>
 
-//! \todo Are any of these unnecessary?
-#include <algorithm>
 #include <initializer_list>
-#include <map>
 #include <queue>
 #include <sqlite3.h>
 #include <string>
-#include <typeinfo>
 #include <unordered_map>
-#include <utility>
+#include <unordered_set>
 #include <vector>
 
 
 //! An abstraction for a database on file
-/*! \todo Update so can have const Database instances (everything complains about exec not being const) */
+/*! \todo Now that getColumns() is \c const, update relevant Database objects to also be \c const
+ */
 class Database {
   public:
-	//! Column declarations
+	//! Lookup table for info on tables in database
 	struct Table {
 	  public:
-		friend class Database;
+		//! List of Table pointers
+		typedef std::vector<const Table*> List;
 
-		//! Article parameters
-		enum struct Article {
-			ID,
-			FeedID,
-			Title,
-			Updated,
-			Link,
-			Author,
-			Summary,
-			Content
+		//! Encapsulation of information on table columns to allow dynamic generation
+		struct Column {
+		  private:
+			friend Database::Table;
+
+			//! Default constructor
+			Column();
+
+			//! Constructor to add reference to Table
+			Column(const Column &c, const Database::Table *t) :
+				name(c.name), column(c.column), update(c.update), table(t) {};
+
+		  public:
+			//! Standard constructor
+			/*! \param n \copybrief name
+			 *  \param c \copybrief column
+			 *  \param u \copybrief update
+			 *
+			 *  \warning The resulting Column is the proper format to insert into a
+			 *             Database::Table, but modifications as it is added result in an
+			 *             object that is not identical to this original.
+			 */
+			Column(const std::string &n, const std::string &c, bool u) :
+			             name(n),              column(c),      update(u), table(NULL) {};
+
+			const std::string             name;    //!< Reference name of column (unique within table)
+			const Database::Table * const table;   //! The containing Database::Table
+
+			const std::string             column;  //!< Name in SQLite database (unique within table)
+			/*! \todo Make function pointer */
+			const bool                    update;  //!< Whether to preform simple automatic update on column
+
+			//! Equality operator
+			bool operator==(const Column &r) const { return ((table == r.table) && !column.compare(r.column)); };  // table == r.table && column == r.column
 		};
-		//! \copybrief column(Meta)
-		static std::string column(Article);
-		//! \copybrief table(Meta)
-		static std::string table(Article) { return "articles"; };
-
-		//! Feed parameters
-		enum struct Feed {
-			ID,
-			Title,
-			Link,
-			Author,
-			Description
-		};
-		//! \copybrief column(Meta)
-		static std::string column(Feed);
-		//! \copybrief table(Meta)
-		static std::string table(Feed) { return "feeds"; };
-
-		//! Meta table parameters
-		enum struct Meta {
-			Title,
-			Version
-		};
-		//! Retrieve unique referent for SQLite database
-		static std::string column(Meta);
-		//! Retrieve table name for SQLite database
-		static std::string table(Meta) { return "meta"; };
-
-		//! Generic reference to columns
-		/*! \tparam T Relevant \b enum of table columns */
-		template <typename T> using Unified = T;
 
 	  private:
-		//! Provide a means to determine equality of columns
-		/*! \copydetails Table::Unified */
-		template <typename T>
-		struct table_hash_eq {
-			//! \cond
-			//! Internal use only
-			std::size_t operator() (T a) const { return std::hash<int>()(int(a)); };
-			//! Internal use only
-			bool operator() (T a, T b) const { return (int(a) == int(b)); };
-			//! \endcond
+		//! Default constructor
+		Table();
+
+		//! Column for unique row identification
+		const Column * const id;
+		//! Main data storage
+		const std::unordered_map<std::string, const Column> columns;
+
+		//! Provide means of more easily filling \ref columns
+		static std::unordered_map<std::string, const Column> generateMap(const Table*, const std::vector<Column>&);
+		//! Provide means of initializing \ref id
+		static const Column *makeID(const Table*, const std::string&, bool);
+
+		//! Provide a means to hash columns
+		struct column_hash_eq {
+			//! Hash function
+			std::size_t operator() (const Column a) const { return std::hash<std::string>()((a.table ? a.table->title : "") + ":" + a.column); };
+			//! Equality function
+			bool operator() (const Column a, const Column b) const { return (((a.table ? a.table->title : "") == (b.table ? b.table->title : "")) && (a.column == b.column)); };
 		};
+
+	  public:
+		//! Standard constructor
+		/*! \todo Prevent linking any tables without ID
+		 *
+		 *  \param t    name of the table in the database
+		 *  \param data list of Column objects contained in the table
+		 */
+		Table(const std::string &t, bool u,                 const std::unordered_set<const Table*> &l, const std::vector<Column> &data) :
+		            title(t),       id(makeID(this, t, u)),       links(l),                                  columns(generateMap(this, data)) {};
+
+		//! Standard destructor
+		virtual ~Table() { delete id; };
+
+		//! Name of table in database
+		const std::string title;
+		//! Secondary data to link to in other Table objects
+		const std::unordered_set<const Table*> links;
+
+		//! Whether the table has a unique ID for each row
+		const bool hasID() const { return (id != NULL); };
+		//! Get unique ID of the table
+		const Column &getID() const { return *id; };
+
+		//! Element access operator
+		const Column &operator [](const std::string &ref) const;
+		//! Iterator to first column in internal order
+		std::unordered_map<std::string, const Column>::const_iterator iterator() const { return columns.cbegin(); };
+		//! Iterator to last column in internal order
+		std::unordered_map<std::string, const Column>::const_iterator end() const { return columns.cend(); };
+
+		//! Obtain a Table::Column from a SQLite column name
+		const Column &parseColumn(const std::string&) const;
+		//! Search the given tables for a Table::Column matching the requested SQLite column name
+		static const Column &parseColumn(const List&, const std::string&);
+		//! Retrieve the requested Table from the List
+		static const Table &parseTable(const List&, const std::string&);
+
 		//! Simplify hash map construction
-		/*! \todo Document template params */
-		template < typename T,
-			   typename MAPPED_TYPE,
-			   typename ALLOCATOR_TYPE = std::allocator<std::pair<const T, MAPPED_TYPE> > >
-		using table_hash_map = std::unordered_map<T, MAPPED_TYPE, table_hash_eq<T>, table_hash_eq<T>, ALLOCATOR_TYPE>;
+		/*! \tparam MAPPED_TYPE    the type of object each key references
+		 *  \tparam ALLOCATOR_TYPE the type of allocator object for storage
+		 */
+		template < typename MAPPED_TYPE,
+			   typename ALLOCATOR_TYPE = std::allocator<std::pair<const Column, MAPPED_TYPE> > >
+		using column_hash_map = std::unordered_map<const Column, MAPPED_TYPE, column_hash_eq, column_hash_eq, ALLOCATOR_TYPE>;
 	};
 
-	//! Mappings of (column name) -> (data)
+	//! Mappings of (Table::Column) -> (data)
 	/*! Represents a lower-level representation of a returned database query.
-	 *  \copydetails Table::Unified
 	 */
-	template <typename T> using Data     = Table::table_hash_map<Table::Unified<T>, std::string>;
+	typedef Table::column_hash_map<std::string> Data;
 	//! Short name for collecting multiple sets of column Data
-	/*! \copydetails Table::Unified */
-	template <typename T> using DataList = std::vector<Data<T> >;
-
-	//! \copybrief MetaData
-	typedef Data<Table::Article> ArticleData;
-	//! \copybrief MetaData
-	typedef Data<Table::Feed>    FeedData;
-	//! Utility specification of Data
-	typedef Data<Table::Meta>    MetaData;
-
-	//! \copybrief MetaDataList
-	typedef DataList<Table::Article> ArticleDataList;
-	//! \copybrief MetaDataList
-	typedef DataList<Table::Feed>    FeedDataList;
-	//! Utility specification of DataList
-	typedef DataList<Table::Meta>    MetaDataList;
+	typedef std::vector<Data> DataList;
 
   private:
 	//! Core SQLite3 database pointer
 	sqlite3 *db;
-
-	//! \copybrief MetaColumnName
-	static const Data<Table::Article> ArticleColumnName;
-	//! \copybrief MetaColumnName
-	static const Data<Table::Feed>    FeedColumnName;
-	//! Provide a lookup for SQLite database names
-	static const Data<Table::Meta>    MetaColumnName;
 
 	//! List of changes to save to the database
 	std::queue<const Article*> articleStage;
@@ -140,6 +156,8 @@ class Database {
 	//! Execute a command on the database
 	void exec(const std::string&);
 
+	//! Convert SQLite results to a usable DataList
+	static int getEntries(DataList*, int, char*[], char*[]);
 	//! Tests if a SQLite command returns no matching data
 	static int isEmpty(bool*, int, char*[], char*[]);
 
@@ -156,16 +174,27 @@ class Database {
 	//! Assignment operator
 	Database &operator=(const Database&);
 
+	//! Registration of all tables in database
+	static const Table::List tables;
+	//! Representation of table \c meta
+	static const Table meta;
+
 	//! Get title assigned to database
 	std::string getTitle() const;
 
 	//! Request an Article by ID
-	Article        getArticle(const std::string&) const;
-	//! Create Article from given data
-	static Article makeArticle(const ArticleData&);
+	Article getArticle(const std::string&) const;
+	//! Request a Feed by ID
+	Feed getFeed(const std::string&) const;
+	//! Check feed document and update if necessary
+	void updateFeed(const std::string&);
 
 	//! Open specified database file
 	void open(const std::string&);
+
+	//! Lookup specified columns in database
+	DataList getColumns(const std::initializer_list<Table::Column>&,
+	                    const std::initializer_list<std::pair<const Table::Column, std::string> >& = {}) const;
 
 	//! Stage a Feed for writing
 	void stage(const Feed&);
@@ -182,12 +211,7 @@ class Database {
 	 */
 
 // private:
-//   static T parseColumn(std::string);
 //   void clearStaged(std::queue<T*>&);
-//   static int getEntries(Database::DataList<T>*, int, char*[], char*[]);
-// public:
-//   DataList<T> getColumns(const std::initializer_list<Table::Unified<T> >&,
-//                          const std::initializer_list<std::pair<Table::Unified<T>, std::string> >&) const {
 #include <database.tcc>
 };
 

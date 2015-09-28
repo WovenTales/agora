@@ -16,6 +16,9 @@ namespace agora {
 		ATOM           //!< ATOM
 	};
 
+	//! Download a file using cURL
+	std::string download(const std::string&);
+
 	//! Replace all instances of one substring with another
 	std::string replaceAll(std::string, const std::string&, const std::string&);
 

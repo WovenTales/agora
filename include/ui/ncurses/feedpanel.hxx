@@ -1,6 +1,7 @@
 #ifndef NCURSESFEEDPANEL_H
 #define NCURSESFEEDPANEL_H
 
+#include <article.hxx>
 #include <database.hxx>
 #include <ui/ncurses/panelbase.hxx>
 
@@ -8,11 +9,11 @@
 
 
 //! Lists each Article contained in a Feed
-class NcursesFeedPanel : public NcursesListPanel<Database::Table::Article> {
+class NcursesFeedPanel : public NcursesListPanel {
   private:
-	virtual std::string              name()  { return "feed"; };
-	virtual Panel                    indic() { return Panel::FeedPanel; };
-	virtual Database::Table::Article line()  { return Database::Table::Article::Title; };
+	virtual std::string             name()  { return "feed"; };
+	virtual Panel                   indic() { return Panel::FeedPanel; };
+	virtual Database::Table::Column line()  { return Article::columns["title"]; };
 
   public:
 	//! \copydoc NcursesPanel(bool)

@@ -2,17 +2,18 @@
 #define NCURSESDATABASEPANEL_H
 
 #include <database.hxx>
+#include <feed.hxx>
 #include <ui/ncurses/panelbase.hxx>
 
 #include <string>
 
 
 //! Lists each Feed contained in a Database
-class NcursesDatabasePanel : public NcursesListPanel<Database::Table::Feed> {
+class NcursesDatabasePanel : public NcursesListPanel {
   private:
-	virtual std::string           name()  { return "database"; };
-	virtual Panel                 indic() { return Panel::DatabasePanel; };
-	virtual Database::Table::Feed line()  { return Database::Table::Feed::Title; };
+	virtual std::string             name()  { return "database"; };
+	virtual Panel                   indic() { return Panel::DatabasePanel; };
+	virtual Database::Table::Column line()  { return Feed::columns["title"]; };
 
   public:
 	//! \copydoc NcursesPanel(bool)

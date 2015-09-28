@@ -15,6 +15,8 @@ class NcursesFeedPanel;
 
 /*! \bug Generates large amount of leaked memory\n
  *       Found that articlePanel wasn't being deleted; retest
+ *  \bug Cursor flickers to various locations when inputting commands
+ *         (best fix probably to hide completely unless writing text)
  */
 class NcursesUI {
   private:

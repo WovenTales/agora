@@ -1,6 +1,6 @@
 #include <ui/ncurses/feedpanel.hxx>
 
-#include <database.hxx>
+#include <feed.hxx>
 #include <ui/ncurses/ui.hxx>
 
 #include <curses.h>
@@ -28,12 +28,9 @@ int NcursesFeedPanel::y() {
  */
 void NcursesFeedPanel::loadFeed(const Database &db, const std::string &fID) {
 	// Get feed title for tab name
-	tabs.push_back(db.getColumns<Database::Table::Feed>(
-				{ Database::Table::Feed::Title }, {{ Database::Table::Feed::ID, fID }}
-			)[0][Database::Table::Feed::Title]);
+	tabs.push_back(db.getColumns({ Feed::columns["title"] }, {{ Feed::columns.getID(), fID }})[0][Feed::columns["title"]]);
 	// We only need to display some of the data
-	data.push_back(db.getColumns<Database::Table::Article>(
-				{ Database::Table::Article::Title }, {{ Database::Table::Article::FeedID, fID }}));
+	data.push_back(db.getColumns({ Article::columns["title"] }, {{ Feed::columns.getID(), fID }}));
 
 	++activeTab;
 }

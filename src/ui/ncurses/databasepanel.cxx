@@ -1,8 +1,5 @@
 #include <ui/ncurses/databasepanel.hxx>
 
-#include <agora.hxx>
-#include <database.hxx>
-
 #include <curses.h>
 
 
@@ -28,8 +25,7 @@ void NcursesDatabasePanel::loadDatabase(const Database &db) {
 	tabs.push_back(db.getTitle());
 
 	// We only need to display some of the data
-	data.push_back(db.getColumns<Database::Table::Feed>(
-				{ Database::Table::Feed::Title, Database::Table::Feed::ID }));
+	data.push_back(db.getColumns({ Feed::columns["title"], Feed::columns.getID() }));
 
 	++activeTab;
 }

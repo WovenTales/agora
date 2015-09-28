@@ -79,28 +79,24 @@ class NcursesPanel {
 };
 
 //! Base class for panels consisting of a navigable list
-/*! \tparam T the Database::Table enum describing the displayed list \e elements
- */
-template <typename T>
 class NcursesListPanel : public NcursesPanel {
   protected:
 	//! List of each element to display
-	std::vector<Database::DataList<T> >  data;
+	std::vector<Database::DataList> data;
 
 	//! Index of the currently selected item
 	unsigned char activeData;
 
-	//! Column of the Database::DataList to display
-	/*! \return the relevant Database::Table column
-	 */
-	virtual T line() =0;
+	//! Database::Table::Column to display as list elements
+	virtual Database::Table::Column line() =0;
 
-/* public:
- * NcursesListPanel(bool = false);
- * virtual bool scrollTab(bool);
- * virtual void fill();
- */
-#include <ui/ncurses/panelbase.tcc>
+  public:
+	//! \copydoc NcursesPanel(bool)
+	NcursesListPanel(bool focus = false) : NcursesPanel(focus), data() { activeData = 0; };
+
+	virtual bool scrollTab(bool);
+
+	virtual void fill();
 };
 
 #endif
