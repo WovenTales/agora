@@ -1,5 +1,7 @@
 // Contained in namespace Logger
 
+public:
+
 //! Standard insertion operator
 /*! \warning Streams input directly to std::ostream; can only handle types
  *           recognized by normal e.g. <tt>std::cout \<\<</tt> operator.

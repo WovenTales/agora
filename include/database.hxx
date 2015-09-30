@@ -6,7 +6,6 @@ class Article;
 class Feed;
 #include <logger.hxx>
 
-#include <initializer_list>
 #include <queue>
 #include <sqlite3.h>
 #include <string>
@@ -45,7 +44,7 @@ class Database {
 			 *
 			 *  \warning The resulting Column is the proper format to insert into a
 			 *             Database::Table, but modifications as it is added result in an
-			 *             object that is not identical to this original.
+			 *             object that is not identical to this original construction.
 			 */
 			Column(const std::string &n, const std::string &c, bool u) :
 			             name(n),              column(c),      update(u), table(NULL) {};
@@ -68,6 +67,7 @@ class Database {
 		//! Column for unique row identification
 		const Column * const id;
 		//! Main data storage
+		/*! \todo Encapsulate and expose so table.columns and table.links function identically */
 		const std::unordered_map<std::string, const Column> columns;
 
 		//! Provide means of more easily filling \ref columns
@@ -94,11 +94,12 @@ class Database {
 		            title(t),       id(makeID(this, t, u)),       links(l),                                  columns(generateMap(this, data)) {};
 
 		//! Standard destructor
-		virtual ~Table() { delete id; };
+		virtual ~Table() { if (id != NULL) delete id; };
 
 		//! Name of table in database
 		const std::string title;
 		//! Secondary data to link to in other Table objects
+		/*! \todo Encapsulate so exact representation doesn't matter */
 		const std::unordered_set<const Table*> links;
 
 		//! Whether the table has a unique ID for each row
@@ -107,6 +108,7 @@ class Database {
 		const Column &getID() const { return *id; };
 
 		//! Element access operator
+		/*! \todo More gracefully and verbosely handle "No such column" */
 		const Column &operator [](const std::string &ref) const { return columns.at(ref); };
 		//! Iterator to first column in internal order
 		std::unordered_map<std::string, const Column>::const_iterator iterator() const { return columns.cbegin(); };
@@ -174,9 +176,9 @@ class Database {
 	Database &operator=(const Database&);
 
 	//! Registration of all tables in database
-	static const Table::List tables;
+	static const Table::List tableList;
 	//! Representation of table \c meta
-	static const Table meta;
+	static const Table table;
 
 	//! Get title assigned to database
 	std::string getTitle() const;
@@ -186,14 +188,13 @@ class Database {
 	//! Request a Feed by ID
 	Feed getFeed(const std::string&) const;
 	//! Check feed document and update if necessary
-	void updateFeed(const std::string&);
+	Feed updateFeed(const Feed&);
 
 	//! Open specified database file
 	void open(const std::string&);
 
 	//! Lookup specified columns in database
-	DataList getColumns(const std::initializer_list<Table::Column>&,
-	                    const std::initializer_list<std::pair<const Table::Column, std::string> >& = {}) const;
+	DataList getColumns(const std::vector<Table::Column>&, const std::vector<std::pair<const Table::Column, std::string> >& = {}) const;
 
 	//! Stage a Feed for writing
 	void stage(const Feed&);

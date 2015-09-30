@@ -36,9 +36,6 @@ class Logger {
 
 	//! Decrement operator
 	Logger &operator--();
-	//! Increment operator
-	/*! \todo Deprecate */
-	Logger &operator++() { ++count; };
 
   public:
 	//! Standard constructor
@@ -55,8 +52,7 @@ class Logger {
 	 *  \endcode
 	 */
 	enum Command {
-		/*! \warning Cleared on Logger::ENDL, so insert after or ORed with that command.
-		 */
+		/*! \warning Cleared on Logger::ENDL, so insert after or ORed with that command. */
 		CONTINUE = CONTINUE_BIT,          //!< Print current line as part of last message
 		ERROR    = ERROR_BIT | ENDL_BIT,  //!< Print with error decorators, or to error stream
 		ENDL     = ENDL_BIT,              //!< Insert a line break and reset status
@@ -68,8 +64,11 @@ class Logger {
 	//! Insertion operator handling control commands (Logger::Command)
 	Logger &operator<<(const Command&);
 
+// public:
+//   Logger &operator<<(const T&);
 #include <logger.tcc>
 };
+
 //! Global handle to default logfile
 /*! Change destination by defining LOGFILE at compile; default of "" outputs to standard streams.
  */

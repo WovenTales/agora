@@ -15,12 +15,12 @@ using namespace std;
 
 /*! Note that Meta columns are not updated, and so that column has no effect.
  */
-const Database::Table Database::meta("meta", false, {}, {
+const Database::Table Database::table("meta", false, {}, {
 	{ "title",   "title",   false },
 	{ "version", "version", false }
 	});
 
-const Database::Table::List Database::tables = { &Database::meta, &Article::columns, &Feed::columns };
+const Database::Table::List Database::tableList = { &Database::table, &Article::table, &Feed::table };
 
 
 
@@ -167,7 +167,13 @@ Database::Database() : db(NULL), count(*new unsigned char(1)) {
 	open(":memory:");
 }
 
-/*! \param filename the SQLite3 database to associate this Database with
+/*! Shortcut for
+ *  \code
+ *    Database d;
+ *    d.open("...");
+ *  \endcode
+ *
+ *  \param filename the SQLite3 database to associate this Database with
  */
 Database::Database(const std::string &filename) : db(NULL), count(*new unsigned char(1)) {
 	open(filename);
@@ -216,7 +222,7 @@ Database &Database::operator=(const Database &d) {
 Article Database::getArticle(const std::string &id) const {
 	Log << "Requesting article with id '" << id << "'..." << (Log.ENDL | Log.CONTINUE);
 
-	DataList rows = getColumns({}, {{ Article::columns.getID(), id }});
+	DataList rows = getColumns({}, {{ Article::table.getID(), id }});
 
 	if (!rows.size()) {  // rows.size() == 0
 		Log << Log.CONTINUE << "No such article found" << Log.ENDL;
@@ -236,7 +242,7 @@ Article Database::getArticle(const std::string &id) const {
 Feed Database::getFeed(const std::string &id) const {
 	Log << "Requesting feed with id '" << id << "'..." << (Log.ENDL | Log.CONTINUE);
 
-	DataList rows = getColumns({}, {{ Feed::columns.getID(), id }});
+	DataList rows = getColumns({}, {{ Feed::table.getID(), id }});
 
 	if (!rows.size()) {  // rows.size() == 0
 		Log << Log.CONTINUE << "No such feed found" << Log.ENDL;
@@ -247,16 +253,21 @@ Feed Database::getFeed(const std::string &id) const {
 	}
 }
 
-/*! \todo Be smarter in determining what needs to be updated in feed.\n
+/*! Automatically adds the updated feed to the Database stage, ready for saving.
+ *
+ *  \todo Be smarter in determining what needs to be updated in feed.\n
  *        Might not provide any benefit as we have already downloaded and constructed it.
  *
  *  \param id the id of the feed to update
+ *
+ *  \return The updated feed
  */
-void Database::updateFeed(const std::string &id) {
-	Feed local = getFeed(id);
+Feed Database::updateFeed(const Feed &local) {
+	Feed remote = Feed(local.getURI(), local.getLang());
 
 	// Dumb copy over works as long as no modified data is stored in main table
-	stage(Feed(local.getURI(), local.getLang()));
+	stage(remote);
+	return remote;
 }
 
 
@@ -305,7 +316,7 @@ void Database::open(const std::string &filename) {
 	if (init) {
 		string command("");
 
-		for (const Table *t : tables) {
+		for (const Table *t : tableList) {
 			command.append("CREATE TABLE " + t->title + " (");
 
 			if (t->hasID()) {
@@ -338,7 +349,7 @@ void Database::open(const std::string &filename) {
 }
 
 
-/*! If \c cols is an empty initializer_list, selects all columns matching \c where.
+/*! If \c cols is an empty vector, selects all columns matching \c where.
  *  Any columns in \c where that aren't in the same table as anything in \c cols are ignored.
  *
  *  \bug As it is, this might only allow a single T (i.e. only columns from a single table, rather than combining them)
@@ -346,8 +357,8 @@ void Database::open(const std::string &filename) {
  *  \param cols  list of \link Database::Table Database::Table::Column\endlink objects to select
  *  \param where pairs of (\link Database::Table Database::Table::Column\endlink, match_string); optional unless \c cols is empty
  */
-Database::DataList Database::getColumns(const std::initializer_list<Database::Table::Column> &cols,
-                                        const std::initializer_list< std::pair<const Database::Table::Column, std::string> > &where) const {
+Database::DataList Database::getColumns(const std::vector<Database::Table::Column> &cols,
+                                        const std::vector< std::pair<const Database::Table::Column, std::string> > &where) const {
 	Log << "Constructing SELECT request...";
 	DataList out;
 
@@ -390,7 +401,6 @@ Database::DataList Database::getColumns(const std::initializer_list<Database::Ta
 		// Whether any particular columns were requested
 		bool colsEmpty = (cols.size() == 0);
 		// Whether w's containing table is in tables
-		//! \todo Ensure proper handling of linked columns
 		bool tInTables = (find(tables.begin(), tables.end(), t) != tables.end());
 
 		// Block only relevant if w refers to an involved table, or if we're wanting entire table
@@ -513,7 +523,7 @@ void Database::save() {
 
 		Log << "Generating command for article '" << title << "'...";
 
-		cols = Article::columns.getID().column + ", " + Feed::columns.getID().column;
+		cols = Article::table.getID().column + ", " + Feed::table.getID().column;
 		vals = "'" + id + "','" + feedID + "'";
 
 		if (title.compare("")) {  // title != ""
@@ -560,7 +570,7 @@ void Database::save() {
 
 		Log << "Generating command for feed '" << title << "'...";
 
-		cols = Feed::columns.getID().column;
+		cols = Feed::table.getID().column;
 		vals = "'" + id + "'";
 
 		if (uri.compare("")) {  // uri != ""
@@ -617,7 +627,7 @@ void Database::exec(const std::string &cmd) {
 int Database::getEntries(Database::DataList *out, int cols, char *data[], char *colNames[]) {
 	Data m;
 	for (int i = 0; i < cols; i++) {
-		m[Table::parseColumn(tables, colNames[i])] = (data[i] ? agora::replaceAll(data[i], "''", "'") : "");
+		m[Table::parseColumn(tableList, colNames[i])] = (data[i] ? agora::replaceAll(data[i], "''", "'") : "");
 		Log << Log.CONTINUE;
 	}
 

@@ -3,7 +3,6 @@
 
 #include <agora.hxx>
 #include <database.hxx>
-#include <feed.hxx>
 
 #include <pugixml.hpp>
 #include <string>
@@ -42,20 +41,20 @@ class Article {
 	
   public:
 	//! Default constructor
-	Article() : Article(*new Feed) {};
+	Article();
 	//! Standard copy constructor
 	Article(const Article&);
 	//! Construct article from given node
 	Article(const pugi::xml_node&, const Feed&, const agora::FeedLang&);
 	//! Construct article using given parameters
 	Article(const Database::Data&, const std::string& = "");
-	//! \copybrief Article(const Database::ArticleData&, const std::string&)
+	//! \copybrief Article(const Database::Data&, const std::string&)
 	Article(const Database::Data&, const Feed&);
 	//! Standard destructor
 	virtual ~Article();
 
 	//! Representation of table \c articles
-	static const Database::Table columns;
+	static const Database::Table table;
 
 	//! \return \copybrief author
 	std::string getAuthor()     const { return author; };  

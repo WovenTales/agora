@@ -27,7 +27,7 @@ Logger::Logger(std::string filename) : count(*new unsigned char(1)), error(*new 
 Logger::Logger(const Logger &l) : count(l.count), error(l.error), terminated(l.terminated), continued(l.continued) {
 	logfile = l.logfile;
 
-	++(*this);
+	++count;
 }
 
 Logger::~Logger() {
@@ -55,9 +55,11 @@ Logger &Logger::operator=(const Logger &l) {
 	terminated = l.terminated;
 	continued  = l.continued;
 
-	++(*this);
+	++count;
 }
 
+/*! \todo Better to replace with differently-named function
+ */
 Logger &Logger::operator--() {
 	if (--count == 0) {
 		if (logfile) {

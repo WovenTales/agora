@@ -14,7 +14,7 @@ using namespace pugi;
 using namespace std;
 
 
-const Database::Table Feed::columns("feeds", true, {}, {
+const Database::Table Feed::table("feeds", true, {}, {
 	{ "uri",     "fURI",     false },
 	{ "title",   "fTitle",   true  },  //!< \todo Implement and check for user-specified title
 	{ "updated", "fUpdated", false },
@@ -58,13 +58,13 @@ Feed::Feed(const Feed &f) : feed(f.feed), docRefs(f.docRefs), feedRefs(*new unsi
 Feed::Feed(const Database::Data &data, agora::FeedLang language) : Feed() {
 	for (pair<const Database::Table::Column, string> c : data) {
 		if (!c.second.empty()) {
-			     if (c.first == Feed::columns.getID())    id          = c.second;
-			else if (c.first == Feed::columns["uri"])     uri         = c.second;
-			else if (c.first == Feed::columns["title"])   title       = c.second;
-			else if (c.first == Feed::columns["updated"]) updated     = parseTime(c.second);
-			else if (c.first == Feed::columns["link"])    link        = c.second;
-			else if (c.first == Feed::columns["author"])  author      = c.second;
-			else if (c.first == Feed::columns["desc"])    description = c.second;
+			     if (c.first == Feed::table.getID())    id          = c.second;
+			else if (c.first == Feed::table["uri"])     uri         = c.second;
+			else if (c.first == Feed::table["title"])   title       = c.second;
+			else if (c.first == Feed::table["updated"]) updated     = parseTime(c.second);
+			else if (c.first == Feed::table["link"])    link        = c.second;
+			else if (c.first == Feed::table["author"])  author      = c.second;
+			else if (c.first == Feed::table["desc"])    description = c.second;
 		}
 	}
 	lang = language;
@@ -112,6 +112,8 @@ Feed::~Feed() {
 }
 
 
+/*! \todo Make private
+ */
 void Feed::incrementCount() const {
 	if (docRefs == UCHAR_MAX) {
 		//! \todo Better error handling
@@ -128,6 +130,8 @@ void Feed::incrementCount() const {
 	}
 }
 
+/*! \todo Make private
+ */
 void Feed::decrementCount() const {
 	if (docRefs == 0) {
 		//! \todo Better error handling

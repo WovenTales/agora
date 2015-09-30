@@ -56,7 +56,7 @@ class Feed {
 	virtual ~Feed();
 
 	//! Representation of table \c feeds
-	static const Database::Table columns;
+	static const Database::Table table;
 
 	//! \return \copybrief author
 	/*! \todo Do something different with getters ("Returns \\copybrief"?) so is brief description rather than return statement (improper order of docs) */
@@ -77,9 +77,6 @@ class Feed {
 	time_t          getUpdateTime()  const { return updated; };
 	//! \return \copybrief uri
 	std::string     getURI()         const { return uri; };
-
-	//! \param id new ID string
-	void setID(const std::string &id) { this->id = id; };
 
 	//! Increment the number of instances of this object
 	void incrementCount() const;
