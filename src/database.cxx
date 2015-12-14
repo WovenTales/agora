@@ -161,6 +161,70 @@ const Database::Table &Database::Table::parseTable(const Database::Table::List &
 	return *out;
 }
 
+/*! If the column is linked in multiple tables, will return the primary column.
+ *
+ *  \param list the List of tables in which to search
+ *  \param col  SQLite name to parse
+ *
+ *  \return a Table::Column representing the primary column with the given SQLite name
+ */
+const Database::Table::Column &Database::Table::parseColumn(const Database::Table::List &list, const std::string &col) {
+	Log << "Searching for column '" << col << "' in list of tables..." << Log.ENDL;
+	const Column *out = NULL, *c;
+
+	for (const Table *t : list) {
+		Log << Log.CONTINUE;
+		//! \todo Ensure that catching No such column exception once implemented, and set c = NULL in that case
+		c = &(t->parseColumn(col));
+
+		if (c != NULL) {
+			if (out == NULL) {
+				out = c;
+			} else if (out->table->title.compare(t->title)) {  // out.title != t.title
+				//! \todo Throw error: multiple columns with same SQLite name
+			}
+		}
+	}
+
+	if (out == NULL) {
+		//! \todo Throw error: no such column found
+		Log << Log.CONTINUE << "No such column found" << Log.ENDL;
+	} else {
+		Log << Log.CONTINUE << "Found primary column in table '" << out->table->title << "'" << Log.ENDL;
+	}
+
+	return *out;
+}
+
+/*! \param list  the List of tables is which to search
+ *  \param table the table to search for
+ *
+ *  \return a Table representing that with the given SQLite name
+ */
+const Database::Table &Database::Table::parseTable(const Database::Table::List &list, const std::string &table) {
+	Log << "Searching for table '" << table << "'...";
+	const Table *out = NULL;
+
+	for (const Table *t : list) {
+		if (!t->title.compare(table)) {  // name(t) == table
+			if (out != NULL) {
+				//! \todo Throw error: multiple identically-named tables
+			}
+			out = t;
+		}
+	}
+
+	if (out == NULL) {
+		//! \todo Throw error: no such table found
+		Log << "No such error found" << Log.ENDL;
+	} else {
+		Log << "Found" << Log.ENDL;
+	}
+
+	return *out;
+}
+
+
 
 
 Database::Database() : db(NULL), count(*new unsigned char(1)) {

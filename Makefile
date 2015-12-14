@@ -4,6 +4,8 @@ INCONLY = database.tcc logger.tcc
 
 LIBRARIES = curl pugixml sqlite3
 
+LIBRARIES = curl ncurses pugixml sqlite3
+
 LOGFILE = agora.log
 
 RUNCMD = $(BINDIR)/agora test.sqlite

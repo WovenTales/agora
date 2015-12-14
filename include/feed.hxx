@@ -78,6 +78,9 @@ class Feed {
 	//! \return \copybrief uri
 	std::string     getURI()         const { return uri; };
 
+	//! \param id new ID string
+	void setID(const std::string &id) { this->id = id; };
+
 	//! Increment the number of instances of this object
 	void incrementCount() const;
 	//! Decrement the number of instances of this object

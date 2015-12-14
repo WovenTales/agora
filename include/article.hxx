@@ -3,6 +3,7 @@
 
 #include <agora.hxx>
 #include <database.hxx>
+class Feed;
 
 #include <pugixml.hpp>
 #include <string>
@@ -48,13 +49,13 @@ class Article {
 	Article(const pugi::xml_node&, const Feed&, const agora::FeedLang&);
 	//! Construct article using given parameters
 	Article(const Database::Data&, const std::string& = "");
-	//! \copybrief Article(const Database::Data&, const std::string&)
+	//! \copybrief Article(const Database::ArticleData&, const std::string&)
 	Article(const Database::Data&, const Feed&);
 	//! Standard destructor
 	virtual ~Article();
 
 	//! Representation of table \c articles
-	static const Database::Table table;
+	static const Database::Table columns;
 
 	//! \return \copybrief author
 	std::string getAuthor()     const { return author; };  

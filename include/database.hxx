@@ -6,6 +6,7 @@ class Article;
 class Feed;
 #include <logger.hxx>
 
+#include <initializer_list>
 #include <queue>
 #include <sqlite3.h>
 #include <string>
@@ -15,7 +16,8 @@ class Feed;
 
 
 //! An abstraction for a database on file
-/*! \todo Update so can have const Database instances (everything complains about exec not being const) */
+/*! \todo Now that getColumns() is \c const, update relevant Database objects to also be \c const
+ */
 class Database {
   public:
 	//! Lookup table for info on tables in database
@@ -67,7 +69,6 @@ class Database {
 		//! Column for unique row identification
 		const Column * const id;
 		//! Main data storage
-		/*! \todo Encapsulate and expose so table.columns and table.links function identically */
 		const std::unordered_map<std::string, const Column> columns;
 
 		//! Provide means of more easily filling \ref columns
@@ -189,12 +190,12 @@ class Database {
 	Feed getFeed(const std::string&) const;
 	//! Check feed document and update if necessary
 	Feed updateFeed(const Feed&);
-
 	//! Open specified database file
 	void open(const std::string&);
 
 	//! Lookup specified columns in database
-	DataList getColumns(const std::vector<Table::Column>&, const std::vector<std::pair<const Table::Column, std::string> >& = {}) const;
+	DataList getColumns(const std::initializer_list<Table::Column>&,
+	                    const std::initializer_list<std::pair<const Table::Column, std::string> >& = {}) const;
 
 	//! Stage a Feed for writing
 	void stage(const Feed&);

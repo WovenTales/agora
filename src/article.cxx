@@ -67,7 +67,7 @@ Article::Article(const pugi::xml_node &entry, const Feed &feed, const FeedLang &
 
 /*! \todo Generate dynamically
  *
- *  \param data     data with which to initialize
+ *  \param data data with which to initialize
  */
 void Article::parseArticleData(const Database::Data &data) {
 	for (pair<const Database::Table::Column, string> c : data) {
