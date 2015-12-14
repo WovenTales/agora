@@ -3,9 +3,10 @@ docs/html/*
 docs/latex/*
 obj/*
 
+old/*
+
 *.log
 *.swp
 
 *.rss
 *.atom
-*.sqlite
